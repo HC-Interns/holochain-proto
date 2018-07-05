@@ -6,7 +6,7 @@ package holochain
 
 import (
 	. "github.com/HC-Interns/holochain-proto/hash"
-	peer "github.com/libp2p/go-libp2p-peer"
+	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 )
 
 //------------------------------------------------------------

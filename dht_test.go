@@ -10,9 +10,9 @@ import (
 	"time"
 
 	. "github.com/HC-Interns/holochain-proto/hash"
-	b58 "github.com/jbenet/go-base58"
-	peer "github.com/libp2p/go-libp2p-peer"
 	. "github.com/smartystreets/goconvey/convey"
+	b58 "gx/ipfs/QmT8rehPR3F6bmwL6zjUN8XpiDBFFpMP2myPdC6ApsWfJf/go-base58"
+	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 )
 
 func TestNewDHT(t *testing.T) {
@@ -780,4 +780,40 @@ func processChangeRequestsInTesting(h *Holochain) {
 			panic(err)
 		}
 	}
+}
+
+
+func TestGetIndexSpec(t * testing.T) {
+
+	schema := `{
+	"title": "Profile Schema",
+	"type": "object",
+	"name" : "person"
+	"properties": {
+		"firstName": {
+			"type": "string"
+		},
+		"lastName": {
+			"type": "string"
+		},
+		"age": {
+			"description": "Age in years",
+			"type": "integer",
+			"minimum": 0
+		}
+	},
+	"required": ["firstName", "lastName"],
+	"indexFields": [{"firstName" : 1}]
+}`
+
+	Convey("getIndexSpec can retrieve correct indexing from a schema json", t, func() {
+		So(indexSpecFromSchema(schema), ShouldResemble, IndexSpec{
+			IndexDef{
+				IndexType: "string",
+				EntryType: "person",
+				FieldPath: "firstName",
+				Ascending: true,
+				},
+		})
+	})
 }

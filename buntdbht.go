@@ -15,7 +15,7 @@ import (
 
 	. "github.com/holochain/holochain-proto/hash"
 	peer "github.com/libp2p/go-libp2p-peer"
-	"github.com/tidwall/buntdb",
+	"github.com/tidwall/buntdb"
 )
 
 type BuntHT struct {
@@ -31,7 +31,8 @@ type linkEvent struct {
 	LinksEntry string
 }
 
-func (ht *BuntHT) Open(file string, indexSpec *IndexSpec) (err error) { // BOOKMARK - modify to accept index spec as parameter
+func (ht *BuntHT) Open(opts interface{}) (err error) {
+	file := opts.(string)
 	db, err := buntdb.Open(file)
 	if err != nil {
 		panic(err)
@@ -42,12 +43,34 @@ func (ht *BuntHT) Open(file string, indexSpec *IndexSpec) (err error) { // BOOKM
 	db.CreateIndex("list", "list:*", buntdb.IndexString)
 	db.CreateIndex("entry", "entry:*", buntdb.IndexString)
 
+	ht.db = db
+	return
+}
+
+func RegisterIndexSpec(ht *BuntHT, indexSpec IndexSpec) {
+
 	// add additional indexes of type json to entries as specified in the index spec
 	// e.g. db.CreateIndex('tweet.text.body', "entry:*", buntdb.IndexJson("text.body"))
 	// indexing will then be automatically done on all future (and existing) keys that match
 
-	ht.db = db
-	return
+	db := ht.db
+	for _, def := range indexSpec {
+		var indexType func(a, b string) bool
+		switch def.IndexType {
+		case "string":
+			indexType = buntdb.IndexString
+		case "integer":
+			indexType = buntdb.IndexInt
+		default:
+			panic("Invalid indexType in spec: " + def.IndexType)
+		}
+		if !def.Ascending {
+			indexType = buntdb.Desc(indexType)
+		}
+		name := buildIndexName(def.EntryType, def.FieldPath)
+		pattern := "entry:" + def.EntryType + ":*"
+		db.CreateIndex(name, pattern, indexType)
+	}
 }
 
 // Put stores a value to the DHT store
@@ -80,10 +103,13 @@ func (ht *BuntHT) Put(m *Message, entryType string, key Hash, src peer.ID, value
 	return
 }
 
-func buildEntryKey(k Hash, entryType string) string {
+func buildEntryKey(k string, entryType string) string {
 	return "entry:" + entryType + ":" + k
 }
 
+func buildIndexName(entryType string, fieldPath string) string {
+	return "customIndex:" + entryType + ":" + fieldPath
+}
 
 // Del moves the given hash to the StatusDeleted status
 // N.B. this functions assumes that the validity of this action has been confirmed

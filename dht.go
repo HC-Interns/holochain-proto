@@ -10,15 +10,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"gopkg.in/mgo.v2/bson"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	. "github.com/holochain/holochain-proto/hash"
 	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/tidwall/gjson"
-
 )
 
 type HashType string
@@ -161,13 +160,14 @@ func NewDHT(h *Holochain) *DHT {
 	return &dht
 }
 
-
-type IndexSpec struct {
-	IndexType	string // Buntdb supported index types - int, float, string
+type IndexDef struct {
+	IndexType string // Buntdb supported index types - int, float, string
 	EntryType string
-	FieldName string
+	FieldPath string
 	Ascending bool
 }
+
+type IndexSpec []IndexDef
 
 func lookupPropertyType(path string, json string) string {
 	// path -> "body.text" -> "properites.body.properties.text"
@@ -177,32 +177,32 @@ func lookupPropertyType(path string, json string) string {
 	return info["type"].String()
 }
 
-func getIndexSpec(zomes []Zome) []IndexSpec {
-	var specs []IndexSpec
+func getIndexSpec(zomes []Zome) IndexSpec {
+	var spec IndexSpec
 
 	for _, zome := range zomes {
 		for _, entry := range zome.Entries {
 			indexFields := gjson.Get(entry.Schema, "indexFields").Array()
 			entryType := gjson.Get(entry.Schema, "name").String()
 			for _, field := range indexFields {
-				spec := field.Map()
-				if len(spec) != 1 {
+				def := field.Map()
+				if len(def) != 1 {
 					panic("wtf!!")
 				}
 
-				for path, asc := range spec {
+				for path, asc := range def {
 					dataType := lookupPropertyType(path, entry.Schema)
-					specs = append(specs, IndexSpec{
+					spec = append(spec, IndexDef{
 						IndexType: dataType, // Buntdb supported index types - int, float, string
 						EntryType: entryType,
-						FieldName: path.String(),
+						FieldPath: path,
 						Ascending: asc.Int() != -1,
 					})
 				}
 			}
 		}
 	}
-	return specs
+	return spec
 }
 
 // Open sets up the DHTs data structures and store
@@ -216,7 +216,8 @@ func (dht *DHT) Open(options interface{}) (err error) {
 	indexSpec := getIndexSpec(h.Nucleus().DNA().Zomes)
 
 	dht.ht = &BuntHT{}
-	dht.ht.Open(filepath.Join(h.DBPath(), DHTStoreFileName), indexSpec) // BOOKMARK - here is where we want to pass an index spec
+	dht.ht.Open(filepath.Join(h.DBPath(), DHTStoreFileName))
+	RegisterIndexSpec(dht.ht.(*BuntHT), indexSpec)
 	dht.retryQueue = make(chan *retry, 100)
 	dht.changeQueue = make(Channel, 100)
 	//go dht.HandleChangeRequests()

@@ -34,7 +34,7 @@ type DHTConfig struct {
 
 	// ValidationTimeout : (integer) Time period in seconds, until data that needs to be validated against a source remains "alive" to keep trying to get validation from that source. If someone commits something and then goes offline, how long do they have to come back online before DHT sync requests consider that data invalid?
 
-	//PeerTimeout : (integer) Time period in seconds, until a node drops a peer from its neighborhood list for failing to respond to gossip requests.
+	// PeerTimeout : (integer) Time period in seconds, until a node drops a peer from its neighborhood list for failing to respond to gossip requests.
 
 	// WireEncryption : settings for point-to-point encryption of messages on the network (none, AES, what are the options?)
 
@@ -164,10 +164,10 @@ func (dht *DHT) Open(options interface{}) (err error) {
 	dht.h = h
 	dht.glog = &h.Config.Loggers.Gossip
 	dht.dlog = &h.Config.Loggers.DHT
-	dht.config = &h.Nucleus().DNA().DHTConfig
+	dht.config = &h.Nucleus().DNA().DHTConfig // BOOKMARK - use a similar method to get the index spec from app properties. Alternatively can put it in DHTConfig...
 
 	dht.ht = &BuntHT{}
-	dht.ht.Open(filepath.Join(h.DBPath(), DHTStoreFileName))
+	dht.ht.Open(filepath.Join(h.DBPath(), DHTStoreFileName)) // BOOKMARK - here is where we want to pass an index spec
 	dht.retryQueue = make(chan *retry, 100)
 	dht.changeQueue = make(Channel, 100)
 	//go dht.HandleChangeRequests()

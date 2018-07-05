@@ -31,7 +31,7 @@ type linkEvent struct {
 	LinksEntry string
 }
 
-func (ht *BuntHT) Open(options interface{}) (err error) {
+func (ht *BuntHT) Open(options interface{}) (err error) { // BOOKMARK - modify to accept index spec as parameter
 	file := options.(string)
 	db, err := buntdb.Open(file)
 	if err != nil {
@@ -42,6 +42,10 @@ func (ht *BuntHT) Open(options interface{}) (err error) {
 	db.CreateIndex("peer", "peer:*", buntdb.IndexString)
 	db.CreateIndex("list", "list:*", buntdb.IndexString)
 	db.CreateIndex("entry", "entry:*", buntdb.IndexString)
+
+	// add additional indexes of type json to entries as specified in the index spec
+	// e.g. db.CreateIndex('tweet.text.body', "entry:*", buntdb.IndexJson("text.body"))
+	// indexing will then be automatically done on all future (and existing) keys that match
 
 	ht.db = db
 	return
@@ -56,7 +60,7 @@ func (ht *BuntHT) Put(m *Message, entryType string, key Hash, src peer.ID, value
 		if err != nil {
 			return err
 		}
-		_, _, err = tx.Set("entry:"+k, string(value), nil)
+		_, _, err = tx.Set(buildEntryKey(k, entryType), string(value), nil)
 		if err != nil {
 			return err
 		}
@@ -77,6 +81,11 @@ func (ht *BuntHT) Put(m *Message, entryType string, key Hash, src peer.ID, value
 	return
 }
 
+func buildEntryKey(k Hash, entryType string) string {
+	return "entry:" + entryType + ":" + k
+}
+
+
 // Del moves the given hash to the StatusDeleted status
 // N.B. this functions assumes that the validity of this action has been confirmed
 func (ht *BuntHT) Del(m *Message, key Hash) (err error) {
@@ -89,8 +98,9 @@ func (ht *BuntHT) Del(m *Message, key Hash) (err error) {
 }
 
 func _setStatus(tx *buntdb.Tx, m *Message, key string, status int) (err error) {
+	entryType, err := tx.Get("type:" + key)
 
-	_, err = tx.Get("entry:" + key)
+	_, err = tx.Get(buildEntryKey(key, entryType))
 	if err != nil {
 		if err == buntdb.ErrNotFound {
 			err = ErrHashNotFound
@@ -132,7 +142,8 @@ func (ht *BuntHT) Mod(m *Message, key Hash, newkey Hash) (err error) {
 }
 
 func _get(tx *buntdb.Tx, k string, statusMask int) (string, error) {
-	val, err := tx.Get("entry:" + k)
+	entryType, err := tx.Get("type:" + k)
+	val, err := tx.Get(buildEntryKey(k, entryType))
 	if err == buntdb.ErrNotFound {
 		err = ErrHashNotFound
 		return val, err

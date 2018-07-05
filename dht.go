@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"gopkg.in/mgo.v2/bson"
 	"path/filepath"
 	"sync"
@@ -168,24 +169,34 @@ type IndexSpec struct {
 	Ascending bool
 }
 
+func lookupPropertyType(path string, json string) string {
+	// path -> "body.text" -> "properites.body.properties.text"
+	segments := strings.Split(path, ".")
+	key := "properties." + strings.Join(segments, ".properties.")
+	info := gjson.Get(json, key).Map()
+	return info["type"].String()
+}
+
 func getIndexSpec(zomes []Zome) []IndexSpec {
 	var specs []IndexSpec
 
 	for _, zome := range zomes {
 		for _, entry := range zome.Entries {
 			indexFields := gjson.Get(entry.Schema, "indexFields").Array()
-			for _, field:= range indexFields {
+			entryType := gjson.Get(entry.Schema, "name").String()
+			for _, field := range indexFields {
 				spec := field.Map()
 				if len(spec) != 1 {
 					panic("wtf!!")
 				}
 
-				for key, val := range spec {
+				for path, asc := range spec {
+					dataType := lookupPropertyType(path, entry.Schema)
 					specs = append(specs, IndexSpec{
-						IndexType:, // Buntdb supported index types - int, float, string
-						EntryType: ,
-						FieldName: key.String(),
-						Ascending: val.Int() != -1, 
+						IndexType: dataType, // Buntdb supported index types - int, float, string
+						EntryType: entryType,
+						FieldName: path.String(),
+						Ascending: asc.Int() != -1,
 					})
 				}
 			}

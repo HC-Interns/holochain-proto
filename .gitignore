@@ -1,3 +1,6 @@
+# atom tag files
+.tags*
+
 # Object files
 *.o
 *.ko

@@ -16,8 +16,8 @@ import (
 	"sync"
 
 	. "github.com/HC-Interns/holochain-proto/hash"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/tidwall/gjson"
-	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 )
 
 type HashType string
@@ -161,6 +161,7 @@ func NewDHT(h *Holochain) *DHT {
 }
 
 type IndexDef struct {
+	ZomeName  string
 	IndexType string // Buntdb supported index types - int, float, string
 	EntryType string
 	FieldPath string
@@ -181,17 +182,16 @@ func getIndexSpec(zomes []Zome) IndexSpec {
 	var spec IndexSpec
 	for _, zome := range zomes {
 		for _, entry := range zome.Entries {
-			spec = append(spec, indexSpecFromSchema(entry.Schema)...)
+			spec = append(spec, indexSpecFromSchema(zome.Name, entry.Name, entry.Schema)...)
 		}
 	}
 	return spec
 }
 
 // get a single entries schema index specifications
-func indexSpecFromSchema(schema string) IndexSpec {
+func indexSpecFromSchema(zomeName string, entryType string, schema string) IndexSpec {
 	var spec IndexSpec
 	indexFields := gjson.Get(schema, "indexFields").Array()
-	entryType := gjson.Get(schema, "name").String()
 	for _, field := range indexFields {
 		def := field.Map()
 		if len(def) != 1 {
@@ -201,6 +201,7 @@ func indexSpecFromSchema(schema string) IndexSpec {
 		for path, asc := range def {
 			dataType := lookupPropertyType(path, schema)
 			spec = append(spec, IndexDef{
+				ZomeName:  zomeName,
 				IndexType: dataType, // Buntdb supported index types - int, float, string
 				EntryType: entryType,
 				FieldPath: path,

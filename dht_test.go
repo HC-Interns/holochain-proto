@@ -10,9 +10,9 @@ import (
 	"time"
 
 	. "github.com/HC-Interns/holochain-proto/hash"
+	b58 "github.com/jbenet/go-base58"
+	peer "github.com/libp2p/go-libp2p-peer"
 	. "github.com/smartystreets/goconvey/convey"
-	b58 "gx/ipfs/QmT8rehPR3F6bmwL6zjUN8XpiDBFFpMP2myPdC6ApsWfJf/go-base58"
-	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 )
 
 func TestNewDHT(t *testing.T) {
@@ -782,8 +782,7 @@ func processChangeRequestsInTesting(h *Holochain) {
 	}
 }
 
-
-func TestGetIndexSpec(t * testing.T) {
+func TestIndexSpecFromSchema(t *testing.T) {
 
 	schema := `{
 	"title": "Profile Schema",
@@ -800,20 +799,71 @@ func TestGetIndexSpec(t * testing.T) {
 			"description": "Age in years",
 			"type": "integer",
 			"minimum": 0
+		},
+		"address" : {
+			"type" : "object",
+			"properties" : {
+				"street" : {"type" : "string"},
+				"number" : {"type" : "integer"}
+			}
 		}
 	},
 	"required": ["firstName", "lastName"],
-	"indexFields": [{"firstName" : 1}]
+	"indexFields": [{"firstName" : 1}, {"address.number" : -1}]
 }`
 
 	Convey("getIndexSpec can retrieve correct indexing from a schema json", t, func() {
-		So(indexSpecFromSchema(schema), ShouldResemble, IndexSpec{
+		zomeName := "someZome"
+		entryType := "person"
+		So(indexSpecFromSchema(zomeName, entryType, schema), ShouldResemble, IndexSpec{
 			IndexDef{
+				ZomeName:  zomeName,
+				EntryType: entryType,
 				IndexType: "string",
-				EntryType: "person",
 				FieldPath: "firstName",
 				Ascending: true,
-				},
+			},
+			IndexDef{
+				ZomeName:  zomeName,
+				EntryType: entryType,
+				IndexType: "integer",
+				FieldPath: "address.number",
+				Ascending: false,
+			},
+		})
+	})
+}
+
+func TestGetIndexSpec(t *testing.T) {
+	d, _, h := SetupTestChain("test")
+	defer CleanupTestChain(h, d)
+	z, _ := h.GetZome("zySampleZome")
+	fmt.Println(z.Entries)
+
+	Convey("Can call getIndexSpec on test zome", t, func() {
+		fmt.Println(getIndexSpec(h.Nucleus().DNA().Zomes))
+		So(getIndexSpec(h.Nucleus().DNA().Zomes), ShouldResemble, IndexSpec{
+			IndexDef{
+				ZomeName:  "zySampleZome",
+				EntryType: "primes",
+				IndexType: "integer",
+				FieldPath: "prime",
+				Ascending: false,
+			},
+			IndexDef{
+				ZomeName:  "zySampleZome",
+				EntryType: "profile",
+				IndexType: "string",
+				FieldPath: "firstName",
+				Ascending: true,
+			},
+			IndexDef{
+				ZomeName:  "jsSampleZome",
+				EntryType: "profile",
+				IndexType: "integer",
+				FieldPath: "address.number",
+				Ascending: false,
+			},
 		})
 	})
 }

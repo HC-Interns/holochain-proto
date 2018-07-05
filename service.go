@@ -1669,7 +1669,8 @@ const (
 			"minimum": 0
 		}
 	},
-	"required": ["firstName", "lastName"]
+	"required": ["firstName", "lastName"],
+	"indexFields": [{"firstName" : 1}]
 }`
 
 	primesSchema = `
@@ -1681,7 +1682,8 @@ const (
 			"type": "integer"
 		}
 	},
-	"required": ["prime"]
+	"required": ["prime"],
+	"indexFields" : [{"prime" : -1}]
 }`
 
 	jsZomeCode = `

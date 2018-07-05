@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -835,13 +836,29 @@ func TestIndexSpecFromSchema(t *testing.T) {
 }
 
 func TestGetIndexSpec(t *testing.T) {
-	d, _, h := SetupTestChain("test")
+	d, _, h := PrepareTestChain("test")
+
 	defer CleanupTestChain(h, d)
-	z, _ := h.GetZome("zySampleZome")
-	fmt.Println(z.Entries)
+	// z, _ := h.GetZome("zySampleZome")
+
+	Convey("indices were successfully created", t, func() {
+		lst, _ := h.dht.ht.(*BuntHT).db.Indexes()
+		expected := []string{
+			"customIndex:zySampleZome:primes:prime",
+			"customIndex:zySampleZome:profile:firstName",
+			"customIndex:jsSampleZome:profile:firstName",
+			"entry",
+			"idx",
+			"link",
+			"list",
+			"peer",
+		}
+		sort.Strings(lst)
+		sort.Strings(expected)
+		So(lst, ShouldResemble, expected)
+	})
 
 	Convey("Can call getIndexSpec on test zome", t, func() {
-		fmt.Println(getIndexSpec(h.Nucleus().DNA().Zomes))
 		So(getIndexSpec(h.Nucleus().DNA().Zomes), ShouldResemble, IndexSpec{
 			IndexDef{
 				ZomeName:  "zySampleZome",
@@ -860,9 +877,9 @@ func TestGetIndexSpec(t *testing.T) {
 			IndexDef{
 				ZomeName:  "jsSampleZome",
 				EntryType: "profile",
-				IndexType: "integer",
-				FieldPath: "address.number",
-				Ascending: false,
+				IndexType: "string",
+				FieldPath: "firstName",
+				Ascending: true,
 			},
 		})
 	})

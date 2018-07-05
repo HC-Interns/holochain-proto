@@ -67,7 +67,7 @@ func RegisterIndexSpec(ht *BuntHT, indexSpec IndexSpec) {
 		if !def.Ascending {
 			indexType = buntdb.Desc(indexType)
 		}
-		name := buildIndexName(def.EntryType, def.FieldPath)
+		name := buildIndexName(&def)
 		pattern := "entry:" + def.EntryType + ":*"
 		db.CreateIndex(name, pattern, indexType)
 	}
@@ -107,8 +107,8 @@ func buildEntryKey(k string, entryType string) string {
 	return "entry:" + entryType + ":" + k
 }
 
-func buildIndexName(entryType string, fieldPath string) string {
-	return "customIndex:" + entryType + ":" + fieldPath
+func buildIndexName(def *IndexDef) string {
+	return "customIndex:" + def.ZomeName + ":" + def.EntryType + ":" + def.FieldPath
 }
 
 // Del moves the given hash to the StatusDeleted status

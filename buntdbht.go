@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	. "github.com/HC-Interns/holochain-proto/hash"
-	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/tidwall/buntdb"
+	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 )
 
 type BuntHT struct {
@@ -55,15 +55,7 @@ func RegisterIndexSpec(ht *BuntHT, indexSpec IndexSpec) {
 
 	db := ht.db
 	for _, def := range indexSpec {
-		var indexType func(a, b string) bool
-		switch def.IndexType {
-		case "string":
-			indexType = buntdb.IndexString
-		case "integer":
-			indexType = buntdb.IndexInt
-		default:
-			panic("Invalid indexType in spec: " + def.IndexType)
-		}
+		indexType := buntdb.IndexJSON(def.FieldPath)
 		if !def.Ascending {
 			indexType = buntdb.Desc(indexType)
 		}

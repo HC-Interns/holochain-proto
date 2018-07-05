@@ -1,10 +1,10 @@
 {
   "author": "zippy",
   "bugs": {
-    "url": "https://github.com/holochain/holochain-proto/issues"
+    "url": "https://github.com/HC-Interns/holochain-proto/issues"
   },
   "gx": {
-    "dvcsimport": "github.com/holochain/holochain-proto"
+    "dvcsimport": "github.com/HC-Interns/holochain-proto"
   },
   "gxDependencies": [
     {

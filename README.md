@@ -1,9 +1,9 @@
 # Holochain
 
-[![Code Status](https://img.shields.io/badge/Code-Alpha-yellow.svg)](https://github.com/holochain/holochain-proto/milestones?direction=asc&sort=completeness&state=all)
+[![Code Status](https://img.shields.io/badge/Code-Alpha-yellow.svg)](https://github.com/HC-Interns/holochain-proto/milestones?direction=asc&sort=completeness&state=all)
 [![Travis](https://img.shields.io/travis/holochain/holochain-proto/master.svg)](https://travis-ci.org/holochain/holochain-proto/branches)
 [![Codecov](https://img.shields.io/codecov/c/github/holochain/holochain-proto.svg)](https://codecov.io/gh/holochain/holochain-proto/branch/master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/holochain/holochain-proto)](https://goreportcard.com/report/github.com/holochain/holochain-proto)
+[![Go Report Card](https://goreportcard.com/badge/github.com/HC-Interns/holochain-proto)](https://goreportcard.com/report/github.com/HC-Interns/holochain-proto)
 [![In Progress](https://img.shields.io/waffle/label/holochain/holochain-proto/in%20progress.svg)](http://waffle.io/holochain/holochain-proto)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![Twitter Follow](https://img.shields.io/twitter/follow/holochain.svg?style=social&label=Follow)](https://twitter.com/holochain)
@@ -12,10 +12,10 @@
 
 In other words, a holochain functions very much **like a blockchain without bottlenecks** when it comes to enforcing validation rules, but is designed to  be fully distributed with each node only needing to hold a small portion of the data instead of everything needing a full copy of a global ledger. This makes it feasible to run blockchain-like applications on devices as lightweight as mobile phones.
 
-**[Code Status:](https://github.com/holochain/holochain-proto/milestones?direction=asc&sort=completeness&state=all)** Alpha. Not for production use. The code has not yet undergone a security audit. We expect to destructively restructure code APIs and data chains until Beta. Proof-of-concept was unveiled at our first hackathon (March 2017). Alpha 0 was released October 2017.  Alpha 1 was released May 2018.
+**[Code Status:](https://github.com/HC-Interns/holochain-proto/milestones?direction=asc&sort=completeness&state=all)** Alpha. Not for production use. The code has not yet undergone a security audit. We expect to destructively restructure code APIs and data chains until Beta. Proof-of-concept was unveiled at our first hackathon (March 2017). Alpha 0 was released October 2017.  Alpha 1 was released May 2018.
 <br/>
 
-| Holochain Links: | [FAQ](https://github.com/holochain/holochain-proto/wiki/FAQ) | [Developer Wiki](https://developer.holochain.org) | [White Paper](https://github.com/holochain/holochain-proto/blob/whitepaper/holochain.pdf) | [GoDocs](https://godoc.org/github.com/holochain/holochain-proto) |
+| Holochain Links: | [FAQ](https://github.com/HC-Interns/holochain-proto/wiki/FAQ) | [Developer Wiki](https://developer.holochain.org) | [White Paper](https://github.com/HC-Interns/holochain-proto/blob/whitepaper/holochain.pdf) | [GoDocs](https://godoc.org/github.com/HC-Interns/holochain-proto) |
 |---|---|---|---|---|
 
 **Table of Contents**
@@ -77,8 +77,8 @@ Which you choose depends on your preference and your purpose.  If you intend to 
 4. Install the command line tool suite with:
 
 ```bash
-$ go get -d -v github.com/holochain/holochain-proto
-$ cd $GOPATH/src/github.com/holochain/holochain-proto
+$ go get -d -v github.com/HC-Interns/holochain-proto
+$ cd $GOPATH/src/github.com/HC-Interns/holochain-proto
 $ make
 ```
 
@@ -103,7 +103,7 @@ Next, in your Control Panel, select *System>Advanced system settings>Environment
     - `C:\Program Files (x86)\GnuWin32\bin` (Or wherever you installed GnuWin32 make to+`\bin`).
 
 ### Docker Based Install
-Using docker, you don't have to install Go first. Our docker scripts manage installation of Go, holochain dependencies and holochain. The docker installation can run alongside Local ("Go") installation of holochain, sharing config directories.  See [docker usage](https://github.com/holochain/holochain-proto/wiki/Docker-Usage) on our wiki for more on how this works.
+Using docker, you don't have to install Go first. Our docker scripts manage installation of Go, holochain dependencies and holochain. The docker installation can run alongside Local ("Go") installation of holochain, sharing config directories.  See [docker usage](https://github.com/HC-Interns/holochain-proto/wiki/Docker-Usage) on our wiki for more on how this works.
 
 1. Install the latest version of Docker on your machine
     1. [Docker Installation](https://docs.docker.com/engine/installation/). The Community edition; stable is sufficient.
@@ -197,7 +197,7 @@ All the commands take a `--debug` flag which will turn on a number of different 
 ## Architecture Overview and Documentation
 Architecture information and application developer documentation is in our [developer.holochain.org](https://developer.holochain.org).
 
-You can also look through auto-generated [reference API on GoDocs](https://godoc.org/github.com/holochain/holochain-proto)
+You can also look through auto-generated [reference API on GoDocs](https://godoc.org/github.com/HC-Interns/holochain-proto)
 
 ## Holochain Core Development
 We accept Pull Requests and welcome your participation. Please make sure to
@@ -216,7 +216,7 @@ Current Throughput graph:
 [![Throughput Graph](http://graphs.waffle.io/holochain/holochain-proto/throughput.svg)](https://waffle.io/holochain/holochain-proto/metrics)
 
 ### Contribute
-Contributors to this project are expected to follow our [development protocols & practices](https://github.com/holochain/holochain-proto/wiki/Development-Protocols).
+Contributors to this project are expected to follow our [development protocols & practices](https://github.com/HC-Interns/holochain-proto/wiki/Development-Protocols).
 
 ### Getting started
 Once you have followed the basic "getting started" guide above you will have the
@@ -225,7 +225,7 @@ CLI tools installed locally.
 All the commands (`hcadmin`, `hcd`, `hcdev`, etc.) are built from the same repo:
 
 ```bash
-$ cd $GOPATH/src/github.com/holochain/holochain-proto
+$ cd $GOPATH/src/github.com/HC-Interns/holochain-proto
 ```
 
 Go will throw errors complaining about not being on the `$GOPATH` if you try to
@@ -258,7 +258,7 @@ changes.
 ### Tests
 To compile and run all the tests:
 ```bash
-$ cd $GOPATH/src/github.com/holochain/holochain-proto
+$ cd $GOPATH/src/github.com/HC-Interns/holochain-proto
 $ make test
 ```
 

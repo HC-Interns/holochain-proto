@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	. "github.com/holochain/holochain-proto/hash"
+	. "github.com/HC-Interns/holochain-proto/hash"
 	net "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
@@ -473,7 +473,7 @@ func TestNodeRouting(t *testing.T) {
 
 func TestNodeAppSendResolution(t *testing.T) {
 	// if this is too high we can face `dial backoff` errors
-	// https://github.com/holochain/holochain-proto/issues/706
+	// https://github.com/HC-Interns/holochain-proto/issues/706
 	nodesCount := 20
 	mt := setupMultiNodeTesting(nodesCount)
 	defer mt.cleanupMultiNodeTesting()

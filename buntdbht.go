@@ -15,7 +15,7 @@ import (
 
 	. "github.com/holochain/holochain-proto/hash"
 	peer "github.com/libp2p/go-libp2p-peer"
-	"github.com/tidwall/buntdb"
+	"github.com/tidwall/buntdb",
 )
 
 type BuntHT struct {
@@ -31,8 +31,7 @@ type linkEvent struct {
 	LinksEntry string
 }
 
-func (ht *BuntHT) Open(options interface{}) (err error) { // BOOKMARK - modify to accept index spec as parameter
-	file := options.(string)
+func (ht *BuntHT) Open(file string, indexSpec *IndexSpec) (err error) { // BOOKMARK - modify to accept index spec as parameter
 	db, err := buntdb.Open(file)
 	if err != nil {
 		panic(err)

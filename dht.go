@@ -16,6 +16,8 @@ import (
 
 	. "github.com/holochain/holochain-proto/hash"
 	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/tidwall/gjson"
+
 )
 
 type HashType string
@@ -158,6 +160,40 @@ func NewDHT(h *Holochain) *DHT {
 	return &dht
 }
 
+
+type IndexSpec struct {
+	IndexType	string // Buntdb supported index types - int, float, string
+	EntryType string
+	FieldName string
+	Ascending bool
+}
+
+func getIndexSpec(zomes []Zome) []IndexSpec {
+	var specs []IndexSpec
+
+	for _, zome := range zomes {
+		for _, entry := range zome.Entries {
+			indexFields := gjson.Get(entry.Schema, "indexFields").Array()
+			for _, field:= range indexFields {
+				spec := field.Map()
+				if len(spec) != 1 {
+					panic("wtf!!")
+				}
+
+				for key, val := range spec {
+					specs = append(specs, IndexSpec{
+						IndexType:, // Buntdb supported index types - int, float, string
+						EntryType: ,
+						FieldName: key.String(),
+						Ascending: val.Int() != -1, 
+					})
+				}
+			}
+		}
+	}
+	return specs
+}
+
 // Open sets up the DHTs data structures and store
 func (dht *DHT) Open(options interface{}) (err error) {
 	h := options.(*Holochain)
@@ -166,8 +202,10 @@ func (dht *DHT) Open(options interface{}) (err error) {
 	dht.dlog = &h.Config.Loggers.DHT
 	dht.config = &h.Nucleus().DNA().DHTConfig // BOOKMARK - use a similar method to get the index spec from app properties. Alternatively can put it in DHTConfig...
 
+	indexSpec := getIndexSpec(h.Nucleus().DNA().Zomes)
+
 	dht.ht = &BuntHT{}
-	dht.ht.Open(filepath.Join(h.DBPath(), DHTStoreFileName)) // BOOKMARK - here is where we want to pass an index spec
+	dht.ht.Open(filepath.Join(h.DBPath(), DHTStoreFileName), indexSpec) // BOOKMARK - here is where we want to pass an index spec
 	dht.retryQueue = make(chan *retry, 100)
 	dht.changeQueue = make(Channel, 100)
 	//go dht.HandleChangeRequests()

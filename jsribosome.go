@@ -862,7 +862,30 @@ func NewJSRibosome(h *Holochain, zome *Zome) (n Ribosome, err error) {
 				return
 			},
 		},
+		"queryDHT": fnData{
+			apiFn: &APIFnQueryDHT{},
+			f: func(args []Arg, _f APIFunction, call otto.FunctionCall) (result otto.Value, err error) {
+				f := _f.(*APIFnQueryDHT)
+				f.entryType = args[0].value.(string)
+				options := QueryDHTOptions{}
+				f.options = &options
 
+				j, err := json.Marshal(args[1].value)
+				if err != nil {
+					return
+				}
+				err = json.Unmarshal(j, &options)
+
+				var r interface{}
+				r, err = f.Call(h)
+				hashes, _ := r.([]string)
+				code := `["` + strings.Join(hashes, `","`) + `"]`
+				fmt.Println(code)
+				arr, _ := jsr.vm.Object(code)
+				result, err = jsr.vm.ToValue(arr)
+				return
+			},
+		},
 		"query": fnData{
 			apiFn: &APIFnQuery{},
 			f: func(args []Arg, _f APIFunction, call otto.FunctionCall) (result otto.Value, err error) {

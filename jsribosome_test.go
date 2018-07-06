@@ -494,6 +494,31 @@ func TestJSQuery(t *testing.T) {
 	})
 }
 
+func TestJSQueryDHT(t *testing.T) {
+	d, _, h := PrepareTestChain("test")
+	defer CleanupTestChain(h, d)
+	zome, _ := h.GetZome("jsSampleZome")
+	v, err := NewJSRibosome(h, zome)
+	if err != nil {
+		panic(err)
+	}
+	z := v.(*JSRibosome)
+
+	Convey("queryDHT", t, func() {
+		// add entries onto the chain to get hash values for testing
+		commit(h, "profile", `{"firstName":"Zippy","lastName":"Pinhead"}`)
+		results, _ := z.Run(`
+			queryDHT('profile', {
+				Field: "firstName",
+				Constrain: {
+					GTE: "Ziggy"
+				},
+				Ascending: true
+			})`)
+		So(results, ShouldEqual, "")
+	})
+}
+
 func TestJSGenesis(t *testing.T) {
 	d, _, h := PrepareTestChain("test")
 	defer CleanupTestChain(h, d)

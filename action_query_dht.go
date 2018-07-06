@@ -59,16 +59,16 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   err = nil
   fmt.Println(constrain)
   // https://golang.org/pkg/encoding/json/#Unmarshal
+  var hashList []string
 
   if constrain.EQ != nil {
     pivot := buildPivot(fieldPath, constrain.EQ)
     indexName := buildIndexName(&IndexDef{ZomeName: a.zome.Name, FieldPath: fieldPath, EntryType: entryType})
-    response := make([]string, 0)
     fmt.Println(indexName)
     fmt.Println(pivot)
     db.View(func (tx *buntdb.Tx) (err error) {
       err = tx.AscendEqual(indexName, pivot, func (key, val string) bool {
-        response = append(response, getHash(key))
+        hashList = append(hashList, getHash(key))
         return true
       })
       return
@@ -77,7 +77,7 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
     fmt.Println("sorry SOL")
   }
   // TODO: page, count
-  return
+  return hashList, err
 }
 
 func getHash (key string) string {

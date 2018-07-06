@@ -887,15 +887,16 @@ func TestGetIndexSpec(t *testing.T) {
 	})
 
 	Convey("Can query an added entry using the created index", t, func(c C) {
-		primesEntry := `{"prime":7}`
+		// primesEntry := `{"prime":7}`
+		profileEntry := `{"firstName":"Willem", "lastName":"Dafoe"}`
 
-		hash := commit(h, "primes", primesEntry)
+		hash := commit(h, "profile", profileEntry)
 		fmt.Println(hash)
 
 		db.View(func(tx *buntdb.Tx) error {
-			tx.AscendEqual("customIndex:zySampleZome:primes:prime", `{"prime":7}`, func(key, val string) bool {
+			tx.AscendEqual("customIndex:jsSampleZome:profile:firstName", `{"firstName":"Willem"}`, func(key, val string) bool {
 				fmt.Println(val)
-				So(val, ShouldContainSubstring, primesEntry)
+				So(val, ShouldContainSubstring, profileEntry)
 				return true
 			})
 			return nil

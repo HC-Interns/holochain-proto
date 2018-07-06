@@ -506,15 +506,15 @@ func TestJSQueryDHT(t *testing.T) {
 
 	Convey("queryDHT", t, func() {
 		// add entries onto the chain to get hash values for testing
-		primesEntry := `{"prime":7}`
-		hash := commit(h, "primes", primesEntry)
+		profileEntry := `{"firstName":"Willem", "lastName":"Dafoe"}`
+		hash := commit(h, "profile", profileEntry)
 		fmt.Println(hash)
 
 		results, _ := z.Run(`
-			queryDHT('primes', {
-				Field: "prime",
+			queryDHT('profile', {
+				Field: "firstName",
 				Constrain: {
-					EQ: 7
+					EQ: "Willem"
 				},
 				Ascending: true
 			})`)

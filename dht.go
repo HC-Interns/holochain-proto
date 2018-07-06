@@ -163,8 +163,8 @@ func NewDHT(h *Holochain) *DHT {
 type IndexDef struct {
 	ZomeName  string
 	IndexType string // Buntdb supported index types - int, float, string
-	EntryType string
-	FieldPath string
+	EntryType string // e.g. person
+	FieldPath string // e.g. 'address.number'
 	Ascending bool
 }
 

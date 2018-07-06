@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	. "github.com/HC-Interns/holochain-proto/hash"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/tidwall/buntdb"
-	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 )
 
 type BuntHT struct {
@@ -60,7 +60,7 @@ func RegisterIndexSpec(ht *BuntHT, indexSpec IndexSpec) {
 			indexType = buntdb.Desc(indexType)
 		}
 		name := buildIndexName(&def)
-		pattern := "entry:" + def.EntryType + ":*"
+		pattern := buildEntryKey("*", def.EntryType)
 		db.CreateIndex(name, pattern, indexType)
 	}
 }

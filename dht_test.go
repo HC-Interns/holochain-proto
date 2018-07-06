@@ -14,6 +14,7 @@ import (
 	b58 "github.com/jbenet/go-base58"
 	peer "github.com/libp2p/go-libp2p-peer"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tidwall/buntdb"
 )
 
 func TestNewDHT(t *testing.T) {
@@ -837,12 +838,13 @@ func TestIndexSpecFromSchema(t *testing.T) {
 
 func TestGetIndexSpec(t *testing.T) {
 	d, _, h := PrepareTestChain("test")
+	db := h.dht.ht.(*BuntHT).db
 
 	defer CleanupTestChain(h, d)
 	// z, _ := h.GetZome("zySampleZome")
 
 	Convey("indices were successfully created", t, func() {
-		lst, _ := h.dht.ht.(*BuntHT).db.Indexes()
+		lst, _ := db.Indexes()
 		expected := []string{
 			"customIndex:zySampleZome:primes:prime",
 			"customIndex:zySampleZome:profile:firstName",
@@ -881,6 +883,21 @@ func TestGetIndexSpec(t *testing.T) {
 				FieldPath: "firstName",
 				Ascending: true,
 			},
+		})
+	})
+
+	Convey("Can query an added entry using the created index", t, func(c C) {
+		primesEntry := `{"prime":7}`
+
+		hash := commit(h, "primes", primesEntry)
+		fmt.Println(hash)
+
+		db.View(func(tx *buntdb.Tx) error {
+			tx.AscendEqual("customIndex:zySampleZome:primes:prime", `{"prime":7}`, func(key, val string) bool {
+				So(val, ShouldContainSubstring, primesEntry)
+				return true
+			})
+			return nil
 		})
 	})
 }

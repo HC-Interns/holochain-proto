@@ -606,13 +606,13 @@ func TestJSQueryDHT(t *testing.T) {
 
 	Convey("Can query numeric fields using less than", t, func() {
 		// add entries onto the chain to get hash values for testing
-		profileEntry := `{"firstName":"Willem", "lastName":"a last name", "Age" : 26}`
+		profileEntry := `{"firstName":"Willem", "lastName":"a last name", "age" : 26}`
 		hash := commit(h, "profile", profileEntry)
 		fmt.Println(hash)
 
 		results, _ := z.Run(`
 			queryDHT('profile', {
-				Field: "firstName",
+				Field: "age",
 				Constrain: {
 					LT: 100
 				},

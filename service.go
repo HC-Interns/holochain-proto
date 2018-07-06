@@ -1667,10 +1667,17 @@ const (
 			"description": "Age in years",
 			"type": "integer",
 			"minimum": 0
+		},
+		"address" : {
+			"type" : "object",
+			"properties" : {
+				"isUnit" : {"type" : "boolean"},
+				"streetName" : {"type" : "string"}
+			}
 		}
 	},
 	"required": ["firstName", "lastName"],
-	"indexFields": [{"firstName" : 1}]
+	"indexFields": [{"firstName" : 1}, {"age" : 1}, {"address.isUnit": -1}]
 }`
 
 	primesSchema = `

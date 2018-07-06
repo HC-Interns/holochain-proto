@@ -504,7 +504,7 @@ func TestJSQueryDHT(t *testing.T) {
 	}
 	z := v.(*JSRibosome)
 
-	Convey("queryDHT", t, func() {
+	Convey("Can query a string field using equality", t, func() {
 		// add entries onto the chain to get hash values for testing
 		profileEntry := `{"firstName":"Willem", "lastName":"Dafoe"}`
 		hash := commit(h, "profile", profileEntry)
@@ -521,7 +521,107 @@ func TestJSQueryDHT(t *testing.T) {
 
 		res, _ := results.(*otto.Value).ToString()
 		fmt.Println(res)
-		// So(, ShouldResemble, res)
+		So(res, ShouldContainSubstring, fmt.Sprint(hash))
+	})
+
+	Convey("Can query a numeric field using equality", t, func() {
+		// add entries onto the chain to get hash values for testing
+		profileEntry := `{"firstName":"Willem", "lastName":"Dafoe", "age" : 62}`
+		hash := commit(h, "profile", profileEntry)
+		fmt.Println(hash)
+
+		results, _ := z.Run(`
+			queryDHT('profile', {
+				Field: "age",
+				Constrain: {
+					EQ: 62
+				},
+				Ascending: true
+			})`)
+
+		res, _ := results.(*otto.Value).ToString()
+		fmt.Println(res)
+		So(res, ShouldContainSubstring, fmt.Sprint(hash))
+	})
+
+	Convey("Can query a nested field using equality", t, func() {
+		// add entries onto the chain to get hash values for testing
+		profileEntry := `{"firstName":"Willem", "lastName":"Dafoe", "address" : {"isUnit" : true}}`
+		hash := commit(h, "profile", profileEntry)
+		fmt.Println(hash)
+
+		results, _ := z.Run(`
+			queryDHT('profile', {
+				Field: "address.isUnit",
+				Constrain: {
+					EQ: true
+				},
+				Ascending: true
+			})`)
+
+		res, _ := results.(*otto.Value).ToString()
+		fmt.Println(res)
+		So(res, ShouldContainSubstring, fmt.Sprint(hash))
+	})
+
+	Convey("Can return multiple matches using equality", t, func() {
+		// add entries onto the chain to get hash values for testing
+		profileEntry := `{"firstName":"Willem", "lastName":"de kooningg", "address" : {"isUnit" : true}}`
+		hash := commit(h, "profile", profileEntry)
+		fmt.Println(hash)
+
+		results, _ := z.Run(`
+			queryDHT('profile', {
+				Field: "firstName",
+				Constrain: {
+					EQ: "Willem"
+				},
+				Ascending: true
+			})`)
+
+		res, _ := results.(*otto.Value).ToString()
+		fmt.Println(res)
+		So(res, ShouldContainSubstring, fmt.Sprint(hash))
+	})
+
+	Convey("Can index strings with spaces", t, func() {
+		// add entries onto the chain to get hash values for testing
+		profileEntry := `{"firstName":"Willem", "lastName":"a last name", "address" : {"isUnit" : true}}`
+		hash := commit(h, "profile", profileEntry)
+		fmt.Println(hash)
+
+		results, _ := z.Run(`
+			queryDHT('profile', {
+				Field: "firstName",
+				Constrain: {
+					EQ: "Willem"
+				},
+				Ascending: true
+			})`)
+
+		res, _ := results.(*otto.Value).ToString()
+		fmt.Println(res)
+		So(res, ShouldContainSubstring, fmt.Sprint(hash))
+	})
+
+	Convey("Can query numeric fields using less than", t, func() {
+		// add entries onto the chain to get hash values for testing
+		profileEntry := `{"firstName":"Willem", "lastName":"a last name", "Age" : 26}`
+		hash := commit(h, "profile", profileEntry)
+		fmt.Println(hash)
+
+		results, _ := z.Run(`
+			queryDHT('profile', {
+				Field: "firstName",
+				Constrain: {
+					LT: 100
+				},
+				Ascending: true
+			})`)
+
+		res, _ := results.(*otto.Value).ToString()
+		fmt.Println(res)
+		So(res, ShouldContainSubstring, fmt.Sprint(hash))
 	})
 }
 

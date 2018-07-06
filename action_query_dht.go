@@ -4,7 +4,7 @@ import (
   "fmt"
   "reflect"
   "strings"
-
+  "strconv"
   "github.com/tidwall/buntdb"
 )
 
@@ -14,6 +14,7 @@ import (
 type APIFnQueryDHT struct {
   entryType string
 	options *QueryDHTOptions
+  zome *Zome
 }
 
 type QueryDHTOptions struct {
@@ -25,11 +26,11 @@ type QueryDHTOptions struct {
 }
 
 type QueryDHTConstraint struct {
-  EQ string
-  LT string
-  LTE string
-  GT string
-  GTE string
+  EQ interface{}
+  LT interface{}
+  LTE interface{}
+  GT interface{}
+  GTE interface{}
   // Range QueryDHTRange
 }
 
@@ -56,12 +57,17 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   // ascending := a.options.Ascending
   db := h.dht.ht.(*BuntHT).db
   err = nil
-  if constrain.GTE != "" {
-    pivot := buildPivot(fieldPath, constrain.GTE)
+  fmt.Println(constrain)
+  // https://golang.org/pkg/encoding/json/#Unmarshal
+
+  if constrain.EQ != nil {
+    pivot := buildPivot(fieldPath, constrain.EQ)
+    indexName := buildIndexName(&IndexDef{ZomeName: a.zome.Name, FieldPath: fieldPath, EntryType: entryType})
     response := make([]string, 0)
+    fmt.Println(indexName)
+    fmt.Println(pivot)
     db.View(func (tx *buntdb.Tx) (err error) {
-      indexName := buildIndexName(entryType, fieldPath)
-      err = tx.AscendGreaterOrEqual(indexName, pivot, func (key, val string) bool {
+      err = tx.AscendEqual(indexName, pivot, func (key, val string) bool {
         response = append(response, getHash(key))
         return true
       })
@@ -79,10 +85,30 @@ func getHash (key string) string {
   return strings.Split(key, ":")[2]
 }
 
-func buildPivot (fieldPath string, value string) (result string) {
+func unmarshalledValueToString (value interface{}) string {
+  switch v := value.(type) {
+  case string:
+    return `"` + v + `"`
+  case bool:
+    if v {
+      return "true"
+    } else {
+      return "false"
+    }
+  case float64:
+    return strconv.FormatFloat(v, 'f', -1, 64)
+  default:
+    panic("could not convert value to string, float or bool")
+  }
+}
+
+func buildPivot (fieldPath string, value interface{}) (result string) {
   // i.e. "address.city" => `{"address": {"city": value}}`
+
+
+
   fields := strings.Split(fieldPath, ".")
-  result = `"` + value + `"`
+  result = unmarshalledValueToString(value)
   for i := len(fields) - 1; i >= 0; i-- {
     key := fields[i]
     result = fmt.Sprintf(`{"%s": %s}`, key, result)

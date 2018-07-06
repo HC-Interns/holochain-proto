@@ -894,6 +894,7 @@ func TestGetIndexSpec(t *testing.T) {
 
 		db.View(func(tx *buntdb.Tx) error {
 			tx.AscendEqual("customIndex:zySampleZome:primes:prime", `{"prime":7}`, func(key, val string) bool {
+				fmt.Println(val)
 				So(val, ShouldContainSubstring, primesEntry)
 				return true
 			})

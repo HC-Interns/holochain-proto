@@ -506,16 +506,22 @@ func TestJSQueryDHT(t *testing.T) {
 
 	Convey("queryDHT", t, func() {
 		// add entries onto the chain to get hash values for testing
-		commit(h, "profile", `{"firstName":"Zippy","lastName":"Pinhead"}`)
+		primesEntry := `{"prime":7}`
+		hash := commit(h, "primes", primesEntry)
+		fmt.Println(hash)
+
 		results, _ := z.Run(`
-			queryDHT('profile', {
-				Field: "firstName",
+			queryDHT('primes', {
+				Field: "prime",
 				Constrain: {
-					GTE: "Ziggy"
+					EQ: 7
 				},
 				Ascending: true
 			})`)
-		So(results, ShouldEqual, "")
+
+		res, _ := results.(*otto.Value).ToString()
+		fmt.Println(res)
+		// So(, ShouldResemble, res)
 	})
 }
 

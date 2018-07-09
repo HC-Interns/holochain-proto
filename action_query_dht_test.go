@@ -7,6 +7,43 @@ import (
   "testing"
 )
 
+func getLookupHelpers(z *JSRibosome) (
+  lookup func(string, string, bool) string,
+  lookupRange func(string, interface{}, interface{}, bool) string,
+) {
+
+  lookup = func(field string, constraint string, ascending bool) (result string) {
+    query := fmt.Sprintf(`
+      queryDHT('profile', {
+        Field: "%s",
+        Constrain: {
+          %s
+        },
+        Ascending: %v
+      })`, field, constraint, ascending)
+    value, _ := z.Run(query)
+    result, _ = value.(*otto.Value).ToString()
+    return
+  }
+
+  lookupRange = func(field string, from interface{}, to interface{}, ascending bool) string {
+    k := fmt.Sprintf("Range: {From: %v, To: %v}", from, to)
+    return lookup(field, k, ascending)
+  }
+
+  return
+}
+
+func hashcat(hashes ...string) string {
+  // Just join a bunch of hashes together with commas
+  list := fmt.Sprint(hashes[0])
+  for _, h := range hashes[1:] {
+    list += "," + fmt.Sprint(h)
+  }
+  return list
+}
+
+
 func TestJSQueryDHT(t *testing.T) {
   d, _, h := PrepareTestChain("test")
   defer CleanupTestChain(h, d)
@@ -17,12 +54,12 @@ func TestJSQueryDHT(t *testing.T) {
   }
   z := v.(*JSRibosome)
 
+  lookup, _ := getLookupHelpers(z)
+
   Convey("Can query a string field using equality", t, func() {
     // add entries onto the chain to get hash values for testing
     profileEntry := `{"firstName":"Willem", "lastName":"Dafoe"}`
     hash := commit(h, "profile", profileEntry)
-    fmt.Println(hash)
-
     results, _ := z.Run(`
       queryDHT('profile', {
         Field: "firstName",
@@ -33,7 +70,6 @@ func TestJSQueryDHT(t *testing.T) {
       })`)
 
     res, _ := results.(*otto.Value).ToString()
-    fmt.Println(res)
     So(res, ShouldContainSubstring, fmt.Sprint(hash))
   })
 
@@ -41,8 +77,6 @@ func TestJSQueryDHT(t *testing.T) {
     // add entries onto the chain to get hash values for testing
     profileEntry := `{"firstName":"Willem", "lastName":"Dafoe", "age" : 62}`
     hash := commit(h, "profile", profileEntry)
-    fmt.Println(hash)
-
     results, _ := z.Run(`
       queryDHT('profile', {
         Field: "age",
@@ -53,7 +87,6 @@ func TestJSQueryDHT(t *testing.T) {
       })`)
 
     res, _ := results.(*otto.Value).ToString()
-    fmt.Println(res)
     So(res, ShouldContainSubstring, fmt.Sprint(hash))
   })
 
@@ -61,47 +94,20 @@ func TestJSQueryDHT(t *testing.T) {
     // add entries onto the chain to get hash values for testing
     profileEntry := `{"firstName":"Willem", "lastName":"Dafoe", "address" : {"isUnit" : true}}`
     hash := commit(h, "profile", profileEntry)
-    fmt.Println(hash)
-
-    results, _ := z.Run(`
-      queryDHT('profile', {
-        Field: "address.isUnit",
-        Constrain: {
-          EQ: true
-        },
-        Ascending: true
-      })`)
-
-    res, _ := results.(*otto.Value).ToString()
-    fmt.Println(res)
-    So(res, ShouldContainSubstring, fmt.Sprint(hash))
+    So(lookup("address.isUnit", `EQ: true`, true), ShouldContainSubstring, fmt.Sprint(hash))
   })
 
   Convey("Can return multiple matches using equality", t, func() {
     // add entries onto the chain to get hash values for testing
     profileEntry := `{"firstName":"Willem", "lastName":"de kooningg", "address" : {"isUnit" : true}}`
     hash := commit(h, "profile", profileEntry)
-    fmt.Println(hash)
-
-    results, _ := z.Run(`
-      queryDHT('profile', {
-        Field: "firstName",
-        Constrain: {
-          EQ: "Willem"
-        },
-        Ascending: true
-      })`)
-
-    res, _ := results.(*otto.Value).ToString()
-    fmt.Println(res)
-    So(res, ShouldContainSubstring, fmt.Sprint(hash))
+    So(lookup("firstName", `EQ: "Willem"`, true), ShouldContainSubstring, fmt.Sprint(hash))
   })
 
   Convey("Can index strings with spaces", t, func() {
     // add entries onto the chain to get hash values for testing
     profileEntry := `{"firstName":"Willem", "lastName":"a last name", "address" : {"isUnit" : true}}`
     hash := commit(h, "profile", profileEntry)
-    fmt.Println(hash)
 
     results, _ := z.Run(`
       queryDHT('profile', {
@@ -113,7 +119,6 @@ func TestJSQueryDHT(t *testing.T) {
       })`)
 
     res, _ := results.(*otto.Value).ToString()
-    fmt.Println(res)
     So(res, ShouldContainSubstring, fmt.Sprint(hash))
   })
 }
@@ -128,6 +133,8 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
   }
   z := v.(*JSRibosome)
 
+  lookup, lookupRange := getLookupHelpers(z)
+
   // add entries onto the chain to get hash values for testing
   profileEntry1 := `{"firstName":"Willem", "lastName":"a last name", "age" : 26}`
   profileEntry2 := `{"firstName":"Maackle", "lastName":"Diggity", "age" : 33}`
@@ -136,49 +143,21 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
   hash2 := fmt.Sprint(commit(h, "profile", profileEntry2))
   hash3 := fmt.Sprint(commit(h, "profile", profileEntry3))
 
-  lookup := func(constraint string, ascending bool) (result string) {
-    query := fmt.Sprintf(`
-      queryDHT('profile', {
-        Field: "age",
-        Constrain: {
-          %s
-        },
-        Ascending: %v
-      })`, constraint, ascending)
-    value, _ := z.Run(query)
-    result, _ = value.(*otto.Value).ToString()
-    return
-  }
-
-  lookupRange := func(from interface{}, to interface{}, ascending bool) string {
-    k := fmt.Sprintf("Range: {From: %v, To: %v}", from, to)
-    return lookup(k, ascending)
-  }
-
-  hashcat := func(hashes ...string) string {
-    // Just join a bunch of hashes together with commas
-    list := hashes[0]
-    for _, h := range hashes[1:] {
-      list += "," + h
-    }
-    return list
-  }
-
   Convey("Can query numeric fields using ordinal lookup", t, func() {
-    So(lookup("LT: 100", true), ShouldEqual, hashcat(hash1, hash2, hash3))
-    So(lookup("LT: 30", true), ShouldEqual, hashcat(hash1))
-    So(lookup("GT: 30", true), ShouldEqual, hashcat(hash2, hash3))
-    So(lookup("GTE: 33", true), ShouldEqual, hashcat(hash2, hash3))
-    So(lookup("GT: 33", true), ShouldEqual, hashcat(hash3))
+    So(lookup("age", "LT: 100", true), ShouldEqual, hashcat(hash1, hash2, hash3))
+    So(lookup("age", "LT: 30", true), ShouldEqual, hashcat(hash1))
+    So(lookup("age", "GT: 30", true), ShouldEqual, hashcat(hash2, hash3))
+    So(lookup("age", "GTE: 33", true), ShouldEqual, hashcat(hash2, hash3))
+    So(lookup("age", "GT: 33", true), ShouldEqual, hashcat(hash3))
   })
 
   Convey("Can query a range", t, func() {
-    So(lookupRange(0, 100, true), ShouldEqual, hashcat(hash1, hash2, hash3))
-    So(lookupRange(0, 100, false), ShouldEqual, hashcat(hash3, hash2, hash1))
-    So(lookupRange(20, 30, false), ShouldEqual, hashcat(hash1))
-    So(lookupRange(30, 40, true), ShouldEqual, hashcat(hash2, hash3))
-    So(lookupRange(40, 50, true), ShouldEqual, hashcat(""))
-    So(lookupRange(40, 20, true), ShouldEqual, hashcat(""))
+    So(lookupRange("age", 0, 100, true), ShouldEqual, hashcat(hash1, hash2, hash3))
+    So(lookupRange("age", 0, 100, false), ShouldEqual, hashcat(hash3, hash2, hash1))
+    So(lookupRange("age", 20, 30, false), ShouldEqual, hashcat(hash1))
+    So(lookupRange("age", 30, 40, true), ShouldEqual, hashcat(hash2, hash3))
+    So(lookupRange("age", 40, 50, true), ShouldEqual, hashcat(""))
+    So(lookupRange("age", 40, 20, true), ShouldEqual, hashcat(""))
   })
 
   Convey("Can query numeric fields ascending or descending", t, func() {
@@ -188,10 +167,10 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
       "LT:100", "LTE:100", "GT:0", "GTE:0",
     }
     for _, k := range cases {
-      So(lookup(k, true), ShouldEqual, hashcat(forward))
-      So(lookup(k, false), ShouldEqual, hashcat(backward))
+      So(lookup("age", k, true), ShouldEqual, hashcat(forward))
+      So(lookup("age", k, false), ShouldEqual, hashcat(backward))
     }
-    So(lookupRange(30, 40, true), ShouldEqual, hashcat(hash2, hash3))
-    So(lookupRange(30, 40, false), ShouldEqual, hashcat(hash3, hash2))
+    So(lookupRange("age", 30, 40, true), ShouldEqual, hashcat(hash2, hash3))
+    So(lookupRange("age", 30, 40, false), ShouldEqual, hashcat(hash3, hash2))
   })
 }

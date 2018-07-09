@@ -885,7 +885,6 @@ func NewJSRibosome(h *Holochain, zome *Zome) (n Ribosome, err error) {
 				r, err = f.Call(h)
 				hashes, _ := r.([]string)
 				code := `["` + strings.Join(hashes, `","`) + `"]`
-				fmt.Println("hashes:", hashes)
 				arr, _ := jsr.vm.Object(code)
 				result, err = jsr.vm.ToValue(arr)
 				return

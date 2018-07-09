@@ -618,8 +618,10 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
 	// add entries onto the chain to get hash values for testing
 	profileEntry1 := `{"firstName":"Willem", "lastName":"a last name", "age" : 26}`
 	profileEntry2 := `{"firstName":"Maackle", "lastName":"Diggity", "age" : 33}`
+	profileEntry3 := `{"firstName":"Polly", "lastName":"Person", "age" : 37}`
 	hash1 := fmt.Sprint(commit(h, "profile", profileEntry1))
 	hash2 := fmt.Sprint(commit(h, "profile", profileEntry2))
+	hash3 := fmt.Sprint(commit(h, "profile", profileEntry3))
 
 	lookup := func(constraint string, ascending bool) (result string) {
 		query := fmt.Sprintf(`
@@ -636,11 +638,11 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
 	}
 
 	Convey("Can query numeric fields using ordinal lookup", t, func() {
-		So(lookup("LT: 100", true), ShouldEqual, hash1+","+hash2)
+		So(lookup("LT: 100", true), ShouldEqual, hash1+","+hash2+","+hash3)
 		So(lookup("LT: 30", true), ShouldEqual, hash1)
-		So(lookup("GT: 30", true), ShouldEqual, hash2)
-		So(lookup("GTE: 33", true), ShouldEqual, hash2)
-		So(lookup("GT: 33", true), ShouldEqual, "")
+		So(lookup("GT: 30", true), ShouldEqual, hash2+","+hash3)
+		So(lookup("GTE: 33", true), ShouldEqual, hash2+","+hash3)
+		So(lookup("GT: 33", true), ShouldEqual, hash3)
 	})
 
 	// Convey("Can query a range", t, func() {
@@ -653,8 +655,17 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
 	// })
 
 	Convey("Can query numeric fields ascending or descending", t, func() {
-		So(lookup("LT: 100", true), ShouldEqual, hash1+","+hash2)
-		So(lookup("LT: 100", false), ShouldEqual, hash2+","+hash1)
+		forward := hash1 + "," + hash2 + "," + hash3
+		backward := hash3 + "," + hash2 + "," + hash1
+		cases := []string{
+			"LT:100", "LTE:100", "GT:0", "GTE:0",
+		}
+		for _, k := range cases {
+			So(lookup(k, true), ShouldEqual, forward)
+			So(lookup(k, false), ShouldEqual, backward)
+		}
+		// So(lookup("GTE:30, LT:40", true), ShouldEqual, hash2+","+hash3)
+		// So(lookup("GTE:30, LT:40", false), ShouldEqual, hash3+","+hash2)
 	})
 }
 

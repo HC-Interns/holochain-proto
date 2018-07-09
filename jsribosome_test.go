@@ -637,35 +637,49 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
 		return
 	}
 
+	lookupRange := func(from interface{}, to interface{}, ascending bool) string {
+		k := fmt.Sprintf("Range: {From: %v, To: %v}", from, to)
+		return lookup(k, ascending)
+	}
+
+	hashcat := func(hashes ...string) string {
+		// Just join a bunch of hashes together with commas
+		list := hashes[0]
+		for _, h := range hashes[1:] {
+			list += "," + h
+		}
+		return list
+	}
+
 	Convey("Can query numeric fields using ordinal lookup", t, func() {
-		So(lookup("LT: 100", true), ShouldEqual, hash1+","+hash2+","+hash3)
-		So(lookup("LT: 30", true), ShouldEqual, hash1)
-		So(lookup("GT: 30", true), ShouldEqual, hash2+","+hash3)
-		So(lookup("GTE: 33", true), ShouldEqual, hash2+","+hash3)
-		So(lookup("GT: 33", true), ShouldEqual, hash3)
+		So(lookup("LT: 100", true), ShouldEqual, hashcat(hash1, hash2, hash3))
+		So(lookup("LT: 30", true), ShouldEqual, hashcat(hash1))
+		So(lookup("GT: 30", true), ShouldEqual, hashcat(hash2, hash3))
+		So(lookup("GTE: 33", true), ShouldEqual, hashcat(hash2, hash3))
+		So(lookup("GT: 33", true), ShouldEqual, hashcat(hash3))
 	})
 
-	// Convey("Can query a range", t, func() {
-	// 	So(lookup("GT: 0, LT: 100", true), ShouldEqual, hash1 + "," + hash2)
-	// 	So(lookup("GT: 0, LT: 100", false), ShouldEqual, hash2 + "," + hash1)
-	// 	So(lookup("GT: 20, LT: 30", false), ShouldEqual, hash1)
-	// 	So(lookup("GT: 30, LT: 40", true), ShouldEqual, hash2)
-	// 	So(lookup("GT: 40, LT: 50", true), ShouldEqual, "")
-	// 	So(lookup("GT: 40, LT: 20", true), ShouldEqual, "")
-	// })
+	Convey("Can query a range", t, func() {
+		So(lookupRange(0, 100, true), ShouldEqual, hashcat(hash1, hash2, hash3))
+		So(lookupRange(0, 100, false), ShouldEqual, hashcat(hash3, hash2, hash1))
+		So(lookupRange(20, 30, false), ShouldEqual, hashcat(hash1))
+		So(lookupRange(30, 40, true), ShouldEqual, hashcat(hash2, hash3))
+		So(lookupRange(40, 50, true), ShouldEqual, hashcat(""))
+		So(lookupRange(40, 20, true), ShouldEqual, hashcat(""))
+	})
 
 	Convey("Can query numeric fields ascending or descending", t, func() {
-		forward := hash1 + "," + hash2 + "," + hash3
-		backward := hash3 + "," + hash2 + "," + hash1
+		forward := hashcat(hash1, hash2, hash3)
+		backward := hashcat(hash3, hash2, hash1)
 		cases := []string{
 			"LT:100", "LTE:100", "GT:0", "GTE:0",
 		}
 		for _, k := range cases {
-			So(lookup(k, true), ShouldEqual, forward)
-			So(lookup(k, false), ShouldEqual, backward)
+			So(lookup(k, true), ShouldEqual, hashcat(forward))
+			So(lookup(k, false), ShouldEqual, hashcat(backward))
 		}
-		// So(lookup("GTE:30, LT:40", true), ShouldEqual, hash2+","+hash3)
-		// So(lookup("GTE:30, LT:40", false), ShouldEqual, hash3+","+hash2)
+		So(lookupRange(30, 40, true), ShouldEqual, hashcat(hash2, hash3))
+		So(lookupRange(30, 40, false), ShouldEqual, hashcat(hash3, hash2))
 	})
 }
 

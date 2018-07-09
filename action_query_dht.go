@@ -31,13 +31,13 @@ type QueryDHTConstraint struct {
   LTE interface{}
   GT interface{}
   GTE interface{}
-  // Range QueryDHTRange
+  Range QueryDHTRange
 }
 
-// type QueryDHTRange struct {
-//   Lower string
-//   Upper string
-// }
+type QueryDHTRange struct {
+  From interface{}
+  To interface{}
+}
 
 func (a *APIFnQueryDHT) Name() string {
 	return "queryDHT"
@@ -60,7 +60,6 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   // ascending := a.options.Ascending
   db := h.dht.ht.(*BuntHT).db
   err = nil
-  fmt.Println(constrain)
   // https://golang.org/pkg/encoding/json/#Unmarshal
 
   indexName := buildIndexName(&IndexDef{ZomeName: a.zome.Name, FieldPath: fieldPath, EntryType: entryType})
@@ -85,6 +84,12 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   } else if constrain.GTE != nil {
     hashList = collectHashes(db, !ascending, func (tx *buntdb.Tx, f IterFn) error {
       return tx.AscendGreaterOrEqual(indexName, buildPivot(fieldPath, constrain.GTE), f)
+    })
+  } else if constrain.Range.From != nil && constrain.Range.To != nil {
+    pivot1 := buildPivot(fieldPath, constrain.Range.From)
+    pivot2 := buildPivot(fieldPath, constrain.Range.To)
+    hashList = collectHashes(db, !ascending, func (tx *buntdb.Tx, f IterFn) error {
+      return tx.AscendRange(indexName, pivot1, pivot2, f)
     })
   } else {
     panic(fmt.Sprintf("Invalid constraints: %v", constrain))

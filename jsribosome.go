@@ -867,7 +867,11 @@ func NewJSRibosome(h *Holochain, zome *Zome) (n Ribosome, err error) {
 			f: func(args []Arg, _f APIFunction, call otto.FunctionCall) (result otto.Value, err error) {
 				f := _f.(*APIFnQueryDHT)
 				f.entryType = args[0].value.(string)
-				options := QueryDHTOptions{}
+				options := QueryDHTOptions{
+					Constrain: QueryDHTConstraint{
+						Range: QueryDHTRange{},
+					},
+				}
 				f.options = &options
 				f.zome = zome
 

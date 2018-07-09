@@ -56,6 +56,7 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   entryType := a.entryType
   fieldPath := a.options.Field
   constrain := a.options.Constrain
+  ascending := a.options.Ascending
   // ascending := a.options.Ascending
   db := h.dht.ht.(*BuntHT).db
   err = nil
@@ -66,23 +67,23 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   var hashList []string
 
   if constrain.EQ != nil {
-    hashList = collectHashes(db, func (tx *buntdb.Tx, f IterFn) error {
+    hashList = collectHashes(db, !ascending, func (tx *buntdb.Tx, f IterFn) error {
       return tx.AscendEqual(indexName, buildPivot(fieldPath, constrain.EQ), f)
     })
   } else if constrain.LT != nil {
-    hashList = collectHashes(db, func (tx *buntdb.Tx, f IterFn) error {
+    hashList = collectHashes(db, !ascending, func (tx *buntdb.Tx, f IterFn) error {
       return tx.AscendLessThan(indexName, buildPivot(fieldPath, constrain.LT), f)
     })
   } else if constrain.GT != nil {
-    hashList = collectHashes(db, func (tx *buntdb.Tx, f IterFn) error {
+    hashList = collectHashes(db, ascending, func (tx *buntdb.Tx, f IterFn) error {
       return tx.DescendGreaterThan(indexName, buildPivot(fieldPath, constrain.GT), f)
     })
   } else if constrain.LTE != nil {
-    hashList = collectHashes(db, func (tx *buntdb.Tx, f IterFn) error {
+    hashList = collectHashes(db, ascending, func (tx *buntdb.Tx, f IterFn) error {
       return tx.DescendLessOrEqual(indexName, buildPivot(fieldPath, constrain.LTE), f)
     })
   } else if constrain.GTE != nil {
-    hashList = collectHashes(db, func (tx *buntdb.Tx, f IterFn) error {
+    hashList = collectHashes(db, !ascending, func (tx *buntdb.Tx, f IterFn) error {
       return tx.AscendGreaterOrEqual(indexName, buildPivot(fieldPath, constrain.GTE), f)
     })
   } else {
@@ -92,7 +93,7 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   return hashList, err
 }
 
-func collectHashes (db *buntdb.DB, iterateFn func (*buntdb.Tx, IterFn) error) []string {
+func collectHashes (db *buntdb.DB, reverse bool, iterateFn func (*buntdb.Tx, IterFn) error) []string {
   // combinator to abstract away some of the common logic between different constraints
   var hashList []string
   innerFunc := func (key, val string) bool {
@@ -103,7 +104,18 @@ func collectHashes (db *buntdb.DB, iterateFn func (*buntdb.Tx, IterFn) error) []
     err = iterateFn(tx, innerFunc)
     return
   })
+  if reverse {
+    hashList = reverseArray(hashList)
+  }
   return hashList
+}
+
+func reverseArray(vals []string) []string {
+	for i := 0; i < len(vals)/2; i++ {
+		j := len(vals) - i - 1
+		vals[i], vals[j] = vals[j], vals[i]
+	}
+	return vals
 }
 
 func getHash (key string) string {

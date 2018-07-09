@@ -603,25 +603,58 @@ func TestJSQueryDHT(t *testing.T) {
 		fmt.Println(res)
 		So(res, ShouldContainSubstring, fmt.Sprint(hash))
 	})
+}
 
-	Convey("Can query numeric fields using less than", t, func() {
-		// add entries onto the chain to get hash values for testing
-		profileEntry := `{"firstName":"Willem", "lastName":"a last name", "age" : 26}`
-		hash := commit(h, "profile", profileEntry)
-		fmt.Println(hash)
+func TestJSQueryDHTOrdinal(t *testing.T) {
+	d, _, h := PrepareTestChain("test")
+	defer CleanupTestChain(h, d)
+	zome, _ := h.GetZome("jsSampleZome")
+	v, err := NewJSRibosome(h, zome)
+	if err != nil {
+		panic(err)
+	}
+	z := v.(*JSRibosome)
 
-		results, _ := z.Run(`
+	// add entries onto the chain to get hash values for testing
+	profileEntry1 := `{"firstName":"Willem", "lastName":"a last name", "age" : 26}`
+	profileEntry2 := `{"firstName":"Maackle", "lastName":"Diggity", "age" : 33}`
+	hash1 := fmt.Sprint(commit(h, "profile", profileEntry1))
+	hash2 := fmt.Sprint(commit(h, "profile", profileEntry2))
+
+	lookup := func(constraint string, ascending bool) (result string) {
+		query := fmt.Sprintf(`
 			queryDHT('profile', {
 				Field: "age",
 				Constrain: {
-					LT: 100
+					%s
 				},
-				Ascending: true
-			})`)
+				Ascending: %v
+			})`, constraint, ascending)
+		value, _ := z.Run(query)
+		result, _ = value.(*otto.Value).ToString()
+		return
+	}
 
-		res, _ := results.(*otto.Value).ToString()
-		fmt.Println(res)
-		So(res, ShouldContainSubstring, fmt.Sprint(hash))
+	Convey("Can query numeric fields using ordinal lookup", t, func() {
+		So(lookup("LT: 100", true), ShouldEqual, hash1+","+hash2)
+		So(lookup("LT: 30", true), ShouldEqual, hash1)
+		So(lookup("GT: 30", true), ShouldEqual, hash2)
+		So(lookup("GTE: 33", true), ShouldEqual, hash2)
+		So(lookup("GT: 33", true), ShouldEqual, "")
+	})
+
+	// Convey("Can query a range", t, func() {
+	// 	So(lookup("GT: 0, LT: 100", true), ShouldEqual, hash1 + "," + hash2)
+	// 	So(lookup("GT: 0, LT: 100", false), ShouldEqual, hash2 + "," + hash1)
+	// 	So(lookup("GT: 20, LT: 30", false), ShouldEqual, hash1)
+	// 	So(lookup("GT: 30, LT: 40", true), ShouldEqual, hash2)
+	// 	So(lookup("GT: 40, LT: 50", true), ShouldEqual, "")
+	// 	So(lookup("GT: 40, LT: 20", true), ShouldEqual, "")
+	// })
+
+	Convey("Can query numeric fields ascending or descending", t, func() {
+		So(lookup("LT: 100", true), ShouldEqual, hash1+","+hash2)
+		So(lookup("LT: 100", false), ShouldEqual, hash2+","+hash1)
 	})
 }
 

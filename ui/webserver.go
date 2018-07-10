@@ -13,7 +13,7 @@ import (
 	"fmt"
 	holo "github.com/HC-Interns/holochain-proto"
 	. "github.com/HC-Interns/holochain-proto/hash"
-	websocket "github.com/gorilla/websocket"
+	websocket "gx/ipfs/QmZH5VXfAJouGMyCCHTRPGCT3e5MG9Lu78Ln3YAYW1XTts/websocket"
 	"io/ioutil"
 	"net/http"
 	"os"

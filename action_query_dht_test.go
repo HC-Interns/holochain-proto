@@ -8,11 +8,11 @@ import (
 )
 
 func getLookupHelpers(z *JSRibosome) (
-  lookup func(string, string, bool, int, int) string,
-  lookupRange func(string, interface{}, interface{}, bool, int, int) string,
+  lookup func(string, string, bool, int, int, bool) string,
+  lookupRange func(string, interface{}, interface{}, bool, int, int, bool) string,
 ) {
 
-  lookup = func(field string, constraint string, ascending bool, count int, page int) (result string) {
+  lookup = func(field string, constraint string, ascending bool, count int, page int, load bool) (result string) {
     query := fmt.Sprintf(`
       queryDHT('profile', {
         Field: "%s",
@@ -21,16 +21,17 @@ func getLookupHelpers(z *JSRibosome) (
         },
         Ascending: %v,
         Count: %v,
-        Page: %v
-      })`, field, constraint, ascending, count, page)
+        Page: %v,
+        Load: %v
+      })`, field, constraint, ascending, count, page, load)
     value, _ := z.Run(query)
     result, _ = value.(*otto.Value).ToString()
     return
   }
 
-  lookupRange = func(field string, from interface{}, to interface{}, ascending bool, count int, page int) string {
+  lookupRange = func(field string, from interface{}, to interface{}, ascending bool, count int, page int, load bool) string {
     k := fmt.Sprintf("Range: {From: %v, To: %v}", from, to)
-    return lookup(field, k, ascending, count, page)
+    return lookup(field, k, ascending, count, page, load)
   }
 
   return
@@ -96,14 +97,14 @@ func TestJSQueryDHT(t *testing.T) {
     // add entries onto the chain to get hash values for testing
     profileEntry := `{"firstName":"Willem", "lastName":"Dafoe", "address" : {"isUnit" : true}}`
     hash := commit(h, "profile", profileEntry)
-    So(lookup("address.isUnit", `EQ: true`, true, 10, 0), ShouldContainSubstring, fmt.Sprint(hash))
+    So(lookup("address.isUnit", `EQ: true`, true, 10, 0, false), ShouldContainSubstring, fmt.Sprint(hash))
   })
 
   Convey("Can return multiple matches using equality", t, func() {
     // add entries onto the chain to get hash values for testing
     profileEntry := `{"firstName":"Willem", "lastName":"de kooningg", "address" : {"isUnit" : true}}`
     hash := commit(h, "profile", profileEntry)
-    So(lookup("firstName", `EQ: "Willem"`, true, 10, 0), ShouldContainSubstring, fmt.Sprint(hash))
+    So(lookup("firstName", `EQ: "Willem"`, true, 10, 0, false), ShouldContainSubstring, fmt.Sprint(hash))
   })
 
   Convey("Can index strings with spaces", t, func() {
@@ -146,20 +147,20 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
   hash3 := fmt.Sprint(commit(h, "profile", profileEntry3))
 
   Convey("Can query numeric fields using ordinal lookup", t, func() {
-    So(lookup("age", "LT: 100", true, 10, 0), ShouldEqual, hashcat(hash1, hash2, hash3))
-    So(lookup("age", "LT: 30", true, 10, 0), ShouldEqual, hashcat(hash1))
-    So(lookup("age", "GT: 30", true, 10, 0), ShouldEqual, hashcat(hash2, hash3))
-    So(lookup("age", "GTE: 33", true, 10, 0), ShouldEqual, hashcat(hash2, hash3))
-    So(lookup("age", "GT: 33", true, 10, 0), ShouldEqual, hashcat(hash3))
+    So(lookup("age", "LT: 100", true, 10, 0, false), ShouldEqual, hashcat(hash1, hash2, hash3))
+    So(lookup("age", "LT: 30", true, 10, 0, false), ShouldEqual, hashcat(hash1))
+    So(lookup("age", "GT: 30", true, 10, 0, false), ShouldEqual, hashcat(hash2, hash3))
+    So(lookup("age", "GTE: 33", true, 10, 0, false), ShouldEqual, hashcat(hash2, hash3))
+    So(lookup("age", "GT: 33", true, 10, 0, false), ShouldEqual, hashcat(hash3))
   })
 
   Convey("Can query a range", t, func() {
-    So(lookupRange("age", 0, 100, true, 10, 0), ShouldEqual, hashcat(hash1, hash2, hash3))
-    So(lookupRange("age", 100, 0, false, 10, 0), ShouldEqual, hashcat(hash3, hash2, hash1))
-    So(lookupRange("age", 30, 20, false, 10, 0), ShouldEqual, hashcat(hash1))
-    So(lookupRange("age", 30, 40, true, 10, 0), ShouldEqual, hashcat(hash2, hash3))
-    So(lookupRange("age", 40, 50, true, 10, 0), ShouldEqual, hashcat(""))
-    So(lookupRange("age", 40, 20, true, 10, 0), ShouldEqual, hashcat(""))
+    So(lookupRange("age", 0, 100, true, 10, 0, false), ShouldEqual, hashcat(hash1, hash2, hash3))
+    So(lookupRange("age", 100, 0, false, 10, 0, false), ShouldEqual, hashcat(hash3, hash2, hash1))
+    So(lookupRange("age", 30, 20, false, 10, 0, false), ShouldEqual, hashcat(hash1))
+    So(lookupRange("age", 30, 40, true, 10, 0, false), ShouldEqual, hashcat(hash2, hash3))
+    So(lookupRange("age", 40, 50, true, 10, 0, false), ShouldEqual, hashcat(""))
+    So(lookupRange("age", 40, 20, true, 10, 0, false), ShouldEqual, hashcat(""))
   })
 
   Convey("Can query numeric fields ascending or descending", t, func() {
@@ -169,11 +170,11 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
       "LT:100", "LTE:100", "GT:0", "GTE:0",
     }
     for _, k := range cases {
-      So(lookup("age", k, true, 10, 0), ShouldEqual, hashcat(forward))
-      So(lookup("age", k, false, 10, 0), ShouldEqual, hashcat(backward))
+      So(lookup("age", k, true, 10, 0, false), ShouldEqual, hashcat(forward))
+      So(lookup("age", k, false, 10, 0, false), ShouldEqual, hashcat(backward))
     }
-    So(lookupRange("age", 30, 40, true, 10, 0), ShouldEqual, hashcat(hash2, hash3))
-    So(lookupRange("age", 40, 30, false, 10, 0), ShouldEqual, hashcat(hash3, hash2))
+    So(lookupRange("age", 30, 40, true, 10, 0, false), ShouldEqual, hashcat(hash2, hash3))
+    So(lookupRange("age", 40, 30, false, 10, 0, false), ShouldEqual, hashcat(hash3, hash2))
   })
 }
 
@@ -203,32 +204,32 @@ func TestJSQueryDHTPaging(t *testing.T) {
   reverseArray(sehsah)
 
   Convey("Can get multiple pages ascending", t, func() {
-    So(lookup("age", "LT:  50", true, 5, 0), ShouldEqual, hashcat(hashes[0:5]...))
-    So(lookup("age", "LT:  50", true, 5, 1), ShouldEqual, hashcat(hashes[5:9]...))
-    So(lookup("age", "LTE: 50", true, 5, 1), ShouldEqual, hashcat(hashes[5:10]...))
-    So(lookup("age", "LTE: 50", true, 5, 2), ShouldEqual, "")
-    So(lookup("age", "LTE: 60", true, 5, 2), ShouldEqual, hashcat(hashes[10:12]...))
+    So(lookup("age", "LT:  50", true, 5, 0, false), ShouldEqual, hashcat(hashes[0:5]...))
+    So(lookup("age", "LT:  50", true, 5, 1, false), ShouldEqual, hashcat(hashes[5:9]...))
+    So(lookup("age", "LTE: 50", true, 5, 1, false), ShouldEqual, hashcat(hashes[5:10]...))
+    So(lookup("age", "LTE: 50", true, 5, 2, false), ShouldEqual, "")
+    So(lookup("age", "LTE: 60", true, 5, 2, false), ShouldEqual, hashcat(hashes[10:12]...))
 
-    So(lookup("age", "GT: 50", true, 5, 0), ShouldEqual, hashcat(hashes[10:15]...))
+    So(lookup("age", "GT: 50", true, 5, 0, false), ShouldEqual, hashcat(hashes[10:15]...))
 
-    So(lookupRange("age", 15, 100, true, 5, 0), ShouldEqual, hashcat(hashes[2:7]...))
-    So(lookupRange("age", 15, 100, true, 5, 1), ShouldEqual, hashcat(hashes[7:12]...))
-    So(lookupRange("age", 15, 100, true, 50, 0), ShouldEqual, hashcat(hashes[2:19]...))
-    So(lookupRange("age", 15, 101, true, 50, 0), ShouldEqual, hashcat(hashes[2:]...))
+    So(lookupRange("age", 15, 100, true, 5, 0, false), ShouldEqual, hashcat(hashes[2:7]...))
+    So(lookupRange("age", 15, 100, true, 5, 1, false), ShouldEqual, hashcat(hashes[7:12]...))
+    So(lookupRange("age", 15, 100, true, 50, 0, false), ShouldEqual, hashcat(hashes[2:19]...))
+    So(lookupRange("age", 15, 101, true, 50, 0, false), ShouldEqual, hashcat(hashes[2:]...))
   })
 
   Convey("Can get multiple pages descending", t, func() {
-    So(lookup("age", "LT:  50", false, 5, 0), ShouldEqual, hashcat(sehsah[11:16]...))
-    So(lookup("age", "LT:  50", false, 5, 1), ShouldEqual, hashcat(sehsah[16:20]...))
-    So(lookup("age", "LTE: 50", false, 5, 1), ShouldEqual, hashcat(sehsah[15:20]...))
-    So(lookup("age", "LTE: 50", false, 5, 2), ShouldEqual, "")
-    So(lookup("age", "LTE: 60", false, 5, 2), ShouldEqual, hashcat(sehsah[18:20]...))
+    So(lookup("age", "LT:  50", false, 5, 0, false), ShouldEqual, hashcat(sehsah[11:16]...))
+    So(lookup("age", "LT:  50", false, 5, 1, false), ShouldEqual, hashcat(sehsah[16:20]...))
+    So(lookup("age", "LTE: 50", false, 5, 1, false), ShouldEqual, hashcat(sehsah[15:20]...))
+    So(lookup("age", "LTE: 50", false, 5, 2, false), ShouldEqual, "")
+    So(lookup("age", "LTE: 60", false, 5, 2, false), ShouldEqual, hashcat(sehsah[18:20]...))
 
-    So(lookup("age", "GT: 50", false, 5, 0), ShouldEqual, hashcat(sehsah[0:5]...))
+    So(lookup("age", "GT: 50", false, 5, 0, false), ShouldEqual, hashcat(sehsah[0:5]...))
 
-    So(lookupRange("age", 85, 15, false, 5, 0), ShouldEqual, hashcat(sehsah[3:8]...))
-    So(lookupRange("age", 85, 15, false, 5, 1), ShouldEqual, hashcat(sehsah[8:13]...))
-    So(lookupRange("age", 85, 15, false, 50, 0), ShouldEqual, hashcat(sehsah[3:17]...))
-    So(lookupRange("age", 101, 15, false, 50, 0), ShouldEqual, hashcat(sehsah[:17]...))
+    So(lookupRange("age", 85, 15, false, 5, 0, false), ShouldEqual, hashcat(sehsah[3:8]...))
+    So(lookupRange("age", 85, 15, false, 5, 1, false), ShouldEqual, hashcat(sehsah[8:13]...))
+    So(lookupRange("age", 85, 15, false, 50, 0, false), ShouldEqual, hashcat(sehsah[3:17]...))
+    So(lookupRange("age", 101, 15, false, 50, 0, false), ShouldEqual, hashcat(sehsah[:17]...))
   })
 }

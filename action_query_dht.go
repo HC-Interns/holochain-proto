@@ -4,8 +4,10 @@ import (
   "fmt"
   "reflect"
   "strings"
+  "encoding/json"
   "strconv"
   "github.com/tidwall/buntdb"
+  . "github.com/HC-Interns/holochain-proto/hash"
 )
 
 //------------------------------------------------------------
@@ -74,7 +76,6 @@ func max(a, b int) int {
 }
 
 func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
-  results = make([]QueryDHTResponse, 0)
 
   entryType := a.entryType
   fieldPath := a.options.Field
@@ -136,7 +137,7 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
 
   limitedHashlist := hashList[offset:end]
 
-  if Load {
+  if load && err==nil {
     return loadEntries(h, limitedHashlist)
   } else {
     return limitedHashlist, err
@@ -160,16 +161,18 @@ func collectHashes (db *buntdb.DB, reverse bool, iterateFn func (*buntdb.Tx, Ite
   return hashList
 }
 
-func loadEntries(h *Holochain, hashList []string) []QueryDHTResponse, error {
-  var results []QueryDHTResponse
-  for hash := range hashList {
-    result := QueryDHTResponse{Hash: hash}
+func loadEntries(h *Holochain, hashList []string) (response []QueryDHTResponse, err error) {
+  var r []QueryDHTResponse
+  for _, hashString := range hashList {
+    hash, _ := NewHash(hashString)
+    result := QueryDHTResponse{Hash: hashString}
     opts := GetOptions{GetMask: GetMaskEntry, StatusMask: StatusDefault} // can add params to query DHT to change these later
+    
     req := GetReq{H: hash, StatusMask: StatusDefault, GetMask: opts.GetMask}
     var rsp interface{}
     rsp, err = callGet(h, req, &opts)
     if err == nil {
-      // code borrowed from action_getlinks. Good thing this is the proto version
+      // code borrowed from action_getlinks. Good thing this is the proto version ;)
       entry := rsp.(GetResp).Entry
       switch content := entry.Content().(type) {
       case string:
@@ -185,8 +188,10 @@ func loadEntries(h *Holochain, hashList []string) []QueryDHTResponse, error {
         err = fmt.Errorf("bad type in entry content: %T:%v", content, content)
       }
     }
+    r = append(r, result)
   }
-  return results, err
+  response = r
+  return
 }
 
 func reverseArray(vals []string) []string {

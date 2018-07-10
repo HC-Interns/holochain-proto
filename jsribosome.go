@@ -890,8 +890,9 @@ func NewJSRibosome(h *Holochain, zome *Zome) (n Ribosome, err error) {
 					code = `["` + strings.Join(v, `","`) + `"]`
 				case []QueryDHTResponse:
 					for _, resp := range v {
-						j, _ := json.Marshal(resp)
-						code += (string(j) + ",")
+						// j, _ := json.Marshal(resp)
+						c := fmt.Sprintf(`{Entry: %v, Hash: "%v"}`, resp.Entry, resp.Hash)
+						code += (c + ",")
 					}
 					code = `[` + code + `]`
 				}

@@ -50,7 +50,22 @@ func (a *APIFnQueryDHT) Args() []Arg {
   }
 }
 
+const DEFAULT_COUNT = 20
+
 type IterFn func (key, val string) bool
+
+func min(a, b int) int {
+    if a < b {
+        return a
+    }
+    return b
+}
+func max(a, b int) int {
+    if a > b {
+        return a
+    }
+    return b
+}
 
 func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   entryType := a.entryType
@@ -65,6 +80,7 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   indexName := buildIndexName(&IndexDef{ZomeName: a.zome.Name, FieldPath: fieldPath, EntryType: entryType})
   var hashList []string
 
+  // TODO: stop iteration after count entries when possible
   if constrain.EQ != nil {
     hashList = collectHashes(db, !ascending, func (tx *buntdb.Tx, f IterFn) error {
       return tx.AscendEqual(indexName, buildPivot(fieldPath, constrain.EQ), f)
@@ -86,16 +102,31 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
       return tx.AscendGreaterOrEqual(indexName, buildPivot(fieldPath, constrain.GTE), f)
     })
   } else if constrain.Range.From != nil && constrain.Range.To != nil {
-    pivot1 := buildPivot(fieldPath, constrain.Range.From)
-    pivot2 := buildPivot(fieldPath, constrain.Range.To)
-    hashList = collectHashes(db, !ascending, func (tx *buntdb.Tx, f IterFn) error {
-      return tx.AscendRange(indexName, pivot1, pivot2, f)
-    })
+    if ascending {
+      pivot1 := buildPivot(fieldPath, constrain.Range.From)
+      pivot2 := buildPivot(fieldPath, constrain.Range.To)
+      hashList = collectHashes(db, false, func (tx *buntdb.Tx, f IterFn) error {
+        return tx.AscendRange(indexName, pivot1, pivot2, f)
+      })
+    } else {
+      pivot1 := buildPivot(fieldPath, constrain.Range.From)
+      pivot2 := buildPivot(fieldPath, constrain.Range.To)
+      hashList = collectHashes(db, false, func (tx *buntdb.Tx, f IterFn) error {
+        return tx.DescendRange(indexName, pivot1, pivot2, f)
+      })
+    }
   } else {
     panic(fmt.Sprintf("Invalid constraints: %v", constrain))
   }
-  // TODO: page, count
-  return hashList, err
+
+  count := a.options.Count
+  if count == 0 {
+    count = DEFAULT_COUNT
+  }
+  offset := max(0, min(count * a.options.Page, len(hashList)))
+  end := max(0, min(offset + count, len(hashList)))
+
+  return hashList[offset:end], err
 }
 
 func collectHashes (db *buntdb.DB, reverse bool, iterateFn func (*buntdb.Tx, IterFn) error) []string {

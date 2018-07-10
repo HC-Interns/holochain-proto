@@ -23,6 +23,7 @@ type QueryDHTOptions struct {
   Ascending bool
   Page int
   Count int
+  Load bool
 }
 
 type QueryDHTConstraint struct {
@@ -79,7 +80,7 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   fieldPath := a.options.Field
   constrain := a.options.Constrain
   ascending := a.options.Ascending
-  // ascending := a.options.Ascending
+  load := a.options.Load
   db := h.dht.ht.(*BuntHT).db
   err = nil
   // https://golang.org/pkg/encoding/json/#Unmarshal
@@ -133,7 +134,13 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   offset := max(0, min(count * a.options.Page, len(hashList)))
   end := max(0, min(offset + count, len(hashList)))
 
-  return hashList[offset:end], err
+  limitedHashlist := hashList[offset:end]
+
+  if Load {
+    return loadEntries(h, limitedHashlist)
+  } else {
+    return limitedHashlist, err
+  }
 }
 
 func collectHashes (db *buntdb.DB, reverse bool, iterateFn func (*buntdb.Tx, IterFn) error) []string {

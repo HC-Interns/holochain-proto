@@ -138,7 +138,9 @@ func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
   limitedHashlist := hashList[offset:end]
 
   if load && err==nil {
-    return loadEntries(h, limitedHashlist)
+    r, err := loadEntries(h, limitedHashlist)
+    fmt.Println(r)
+    return r, err
   } else {
     return limitedHashlist, err
   }

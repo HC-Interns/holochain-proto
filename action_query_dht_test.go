@@ -5,6 +5,7 @@ import (
   "github.com/robertkrimen/otto"
   . "github.com/smartystreets/goconvey/convey"
   "testing"
+  "encoding/json"
 )
 
 func getLookupHelpers(z *JSRibosome) (
@@ -14,7 +15,7 @@ func getLookupHelpers(z *JSRibosome) (
 
   lookup = func(field string, constraint string, ascending bool, count int, page int, load bool) (result string) {
     query := fmt.Sprintf(`
-      queryDHT('profile', {
+      JSON.stringify(queryDHT('profile', {
         Field: "%s",
         Constrain: {
           %s
@@ -23,7 +24,7 @@ func getLookupHelpers(z *JSRibosome) (
         Count: %v,
         Page: %v,
         Load: %v
-      })`, field, constraint, ascending, count, page, load)
+      }))`, field, constraint, ascending, count, page, load)
     value, _ := z.Run(query)
     result, _ = value.(*otto.Value).ToString()
     return
@@ -39,11 +40,12 @@ func getLookupHelpers(z *JSRibosome) (
 
 func hashcat(hashes ...string) string {
   // Just join a bunch of hashes together with commas
-  list := fmt.Sprint(hashes[0])
-  for _, h := range hashes[1:] {
-    list += "," + fmt.Sprint(h)
-  }
-  return list
+  j, _ := json.Marshal(hashes)
+  // list := fmt.Sprint(hashes[0])
+  // for _, h := range hashes[1:] {
+  //   list += "," + fmt.Sprint(h)
+  // }
+  return string(j)
 }
 
 
@@ -170,11 +172,15 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
       "LT:100", "LTE:100", "GT:0", "GTE:0",
     }
     for _, k := range cases {
-      So(lookup("age", k, true, 10, 0, false), ShouldEqual, hashcat(forward))
-      So(lookup("age", k, false, 10, 0, false), ShouldEqual, hashcat(backward))
+      So(lookup("age", k, true, 10, 0, false), ShouldEqual, forward)
+      So(lookup("age", k, false, 10, 0, false), ShouldEqual, backward)
     }
     So(lookupRange("age", 30, 40, true, 10, 0, false), ShouldEqual, hashcat(hash2, hash3))
     So(lookupRange("age", 40, 30, false, 10, 0, false), ShouldEqual, hashcat(hash3, hash2))
+  })
+
+  Convey("Can load values in ordinal query", t, func() {
+    So(lookupRange("age", 30, 40, true, 10, 0, true), ShouldEqual, `[{"Entry":"{\"firstName\":\"Maackle\", \"lastName\":\"Diggity\", \"age\" : 33}","Hash":"QmUUSqWxPi88CVVj6VGgsKXghWYS997VmabLDq9DnJokjT"},{"Entry":"{\"firstName\":\"Polly\", \"lastName\":\"Person\", \"age\" : 37}","Hash":"QmbeiEd1mSwjWbXd7fe355TJpPj5cF5fhkjwxxHqFcjVNK"}]`)
   })
 }
 
@@ -207,7 +213,7 @@ func TestJSQueryDHTPaging(t *testing.T) {
     So(lookup("age", "LT:  50", true, 5, 0, false), ShouldEqual, hashcat(hashes[0:5]...))
     So(lookup("age", "LT:  50", true, 5, 1, false), ShouldEqual, hashcat(hashes[5:9]...))
     So(lookup("age", "LTE: 50", true, 5, 1, false), ShouldEqual, hashcat(hashes[5:10]...))
-    So(lookup("age", "LTE: 50", true, 5, 2, false), ShouldEqual, "")
+    So(lookup("age", "LTE: 50", true, 5, 2, false), ShouldEqual, hashcat(""))
     So(lookup("age", "LTE: 60", true, 5, 2, false), ShouldEqual, hashcat(hashes[10:12]...))
 
     So(lookup("age", "GT: 50", true, 5, 0, false), ShouldEqual, hashcat(hashes[10:15]...))
@@ -222,7 +228,7 @@ func TestJSQueryDHTPaging(t *testing.T) {
     So(lookup("age", "LT:  50", false, 5, 0, false), ShouldEqual, hashcat(sehsah[11:16]...))
     So(lookup("age", "LT:  50", false, 5, 1, false), ShouldEqual, hashcat(sehsah[16:20]...))
     So(lookup("age", "LTE: 50", false, 5, 1, false), ShouldEqual, hashcat(sehsah[15:20]...))
-    So(lookup("age", "LTE: 50", false, 5, 2, false), ShouldEqual, "")
+    So(lookup("age", "LTE: 50", false, 5, 2, false), ShouldEqual, hashcat(""))
     So(lookup("age", "LTE: 60", false, 5, 2, false), ShouldEqual, hashcat(sehsah[18:20]...))
 
     So(lookup("age", "GT: 50", false, 5, 0, false), ShouldEqual, hashcat(sehsah[0:5]...))

@@ -180,7 +180,7 @@ func TestJSQueryDHTOrdinal(t *testing.T) {
   })
 
   Convey("Can load values in ordinal query", t, func() {
-    So(lookupRange("age", 30, 40, true, 10, 0, true), ShouldEqual, `[{"Entry":"{\"firstName\":\"Maackle\", \"lastName\":\"Diggity\", \"age\" : 33}","Hash":"QmUUSqWxPi88CVVj6VGgsKXghWYS997VmabLDq9DnJokjT"},{"Entry":"{\"firstName\":\"Polly\", \"lastName\":\"Person\", \"age\" : 37}","Hash":"QmbeiEd1mSwjWbXd7fe355TJpPj5cF5fhkjwxxHqFcjVNK"}]`)
+    So(lookupRange("age", 30, 40, true, 10, 0, true), ShouldEqual, `[{"Entry":{"age":33,"firstName":"Maackle","lastName":"Diggity"},"Hash":"QmUUSqWxPi88CVVj6VGgsKXghWYS997VmabLDq9DnJokjT"},{"Entry":{"age":37,"firstName":"Polly","lastName":"Person"},"Hash":"QmbeiEd1mSwjWbXd7fe355TJpPj5cF5fhkjwxxHqFcjVNK"}]`)
   })
 }
 

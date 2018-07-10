@@ -10,8 +10,8 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/HC-Interns/holochain-proto/hash"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/robertkrimen/otto"
-	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 	"strings"
 	"time"
 )
@@ -883,7 +883,7 @@ func NewJSRibosome(h *Holochain, zome *Zome) (n Ribosome, err error) {
 
 				var r interface{}
 				r, err = f.Call(h)
-				
+
 				var code string
 				switch v := r.(type) {
 				case []string:

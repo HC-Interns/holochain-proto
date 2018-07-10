@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	. "github.com/HC-Interns/holochain-proto/hash"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/tidwall/buntdb"
-	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 )
 
 type BuntHT struct {
@@ -554,7 +554,7 @@ func (ht *BuntHT) String() (result string) {
 	err = ht.db.View(func(tx *buntdb.Tx) error {
 		err = tx.Ascend("entry", func(key, value string) bool {
 			x := strings.Split(key, ":")
-			k := string(x[1])
+			k := string(x[len(x)-1])
 			var status string
 			statusVal, err := tx.Get("status:" + k)
 			if err != nil {
@@ -695,7 +695,7 @@ func (ht *BuntHT) Iterate(fn HashTableIterateFn) {
 	ht.db.View(func(tx *buntdb.Tx) error {
 		err := tx.Ascend("entry", func(key, value string) bool {
 			x := strings.Split(key, ":")
-			k := string(x[1])
+			k := string(x[len(x)-1])
 			hash, err := NewHash(k)
 			if err != nil {
 				return false

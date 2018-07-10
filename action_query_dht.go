@@ -39,6 +39,11 @@ type QueryDHTRange struct {
   To interface{}
 }
 
+type QueryDHTResponse struct {
+  Hash string
+  Entry string
+}
+
 func (a *APIFnQueryDHT) Name() string {
 	return "queryDHT"
 }
@@ -68,6 +73,8 @@ func max(a, b int) int {
 }
 
 func (a *APIFnQueryDHT) Call(h *Holochain) (response interface{}, err error) {
+  results = make([]QueryDHTResponse, 0)
+
   entryType := a.entryType
   fieldPath := a.options.Field
   constrain := a.options.Constrain
@@ -144,6 +151,35 @@ func collectHashes (db *buntdb.DB, reverse bool, iterateFn func (*buntdb.Tx, Ite
     hashList = reverseArray(hashList)
   }
   return hashList
+}
+
+func loadEntries(h *Holochain, hashList []string) []QueryDHTResponse, error {
+  var results []QueryDHTResponse
+  for hash := range hashList {
+    result := QueryDHTResponse{Hash: hash}
+    opts := GetOptions{GetMask: GetMaskEntry, StatusMask: StatusDefault} // can add params to query DHT to change these later
+    req := GetReq{H: hash, StatusMask: StatusDefault, GetMask: opts.GetMask}
+    var rsp interface{}
+    rsp, err = callGet(h, req, &opts)
+    if err == nil {
+      // code borrowed from action_getlinks. Good thing this is the proto version
+      entry := rsp.(GetResp).Entry
+      switch content := entry.Content().(type) {
+      case string:
+        result.Entry = content
+      case []byte:
+        var j []byte
+        j, err = json.Marshal(content)
+        if err != nil {
+          return
+        }
+        result.Entry = string(j)
+      default:
+        err = fmt.Errorf("bad type in entry content: %T:%v", content, content)
+      }
+    }
+  }
+  return results, err
 }
 
 func reverseArray(vals []string) []string {

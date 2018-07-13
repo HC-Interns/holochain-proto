@@ -31,8 +31,8 @@ type linkEvent struct {
 	LinksEntry string
 }
 
-func (ht *BuntHT) Open(options interface{}) (err error) {
-	file := options.(string)
+func (ht *BuntHT) Open(opts interface{}) (err error) {
+	file := opts.(string)
 	db, err := buntdb.Open(file)
 	if err != nil {
 		panic(err)
@@ -47,6 +47,24 @@ func (ht *BuntHT) Open(options interface{}) (err error) {
 	return
 }
 
+func RegisterIndexSpec(ht *BuntHT, indexSpec IndexSpec) {
+
+	// add additional indexes of type json to entries as specified in the index spec
+	// e.g. db.CreateIndex('tweet.text.body', "entry:*", buntdb.IndexJson("text.body"))
+	// indexing will then be automatically done on all future (and existing) keys that match
+
+	db := ht.db
+	for _, def := range indexSpec {
+		indexType := buntdb.IndexJSON(def.FieldPath)
+		if !def.Ascending {
+			indexType = buntdb.Desc(indexType)
+		}
+		name := buildIndexName(&def)
+		pattern := buildEntryKey("*", def.EntryType)
+		db.CreateIndex(name, pattern, indexType)
+	}
+}
+
 // Put stores a value to the DHT store
 // N.B. This call assumes that the value has already been validated
 func (ht *BuntHT) Put(m *Message, entryType string, key Hash, src peer.ID, value []byte, status int) (err error) {
@@ -56,7 +74,7 @@ func (ht *BuntHT) Put(m *Message, entryType string, key Hash, src peer.ID, value
 		if err != nil {
 			return err
 		}
-		_, _, err = tx.Set("entry:"+k, string(value), nil)
+		_, _, err = tx.Set(buildEntryKey(k, entryType), string(value), nil)
 		if err != nil {
 			return err
 		}
@@ -77,6 +95,14 @@ func (ht *BuntHT) Put(m *Message, entryType string, key Hash, src peer.ID, value
 	return
 }
 
+func buildEntryKey(k string, entryType string) string {
+	return "entry:" + entryType + ":" + k
+}
+
+func buildIndexName(def *IndexDef) string {
+	return "customIndex:" + def.ZomeName + ":" + def.EntryType + ":" + def.FieldPath
+}
+
 // Del moves the given hash to the StatusDeleted status
 // N.B. this functions assumes that the validity of this action has been confirmed
 func (ht *BuntHT) Del(m *Message, key Hash) (err error) {
@@ -89,8 +115,9 @@ func (ht *BuntHT) Del(m *Message, key Hash) (err error) {
 }
 
 func _setStatus(tx *buntdb.Tx, m *Message, key string, status int) (err error) {
+	entryType, err := tx.Get("type:" + key)
 
-	_, err = tx.Get("entry:" + key)
+	_, err = tx.Get(buildEntryKey(key, entryType))
 	if err != nil {
 		if err == buntdb.ErrNotFound {
 			err = ErrHashNotFound
@@ -132,7 +159,8 @@ func (ht *BuntHT) Mod(m *Message, key Hash, newkey Hash) (err error) {
 }
 
 func _get(tx *buntdb.Tx, k string, statusMask int) (string, error) {
-	val, err := tx.Get("entry:" + k)
+	entryType, err := tx.Get("type:" + k)
+	val, err := tx.Get(buildEntryKey(k, entryType))
 	if err == buntdb.ErrNotFound {
 		err = ErrHashNotFound
 		return val, err
@@ -526,7 +554,7 @@ func (ht *BuntHT) String() (result string) {
 	err = ht.db.View(func(tx *buntdb.Tx) error {
 		err = tx.Ascend("entry", func(key, value string) bool {
 			x := strings.Split(key, ":")
-			k := string(x[1])
+			k := string(x[len(x)-1])
 			var status string
 			statusVal, err := tx.Get("status:" + k)
 			if err != nil {
@@ -667,7 +695,7 @@ func (ht *BuntHT) Iterate(fn HashTableIterateFn) {
 	ht.db.View(func(tx *buntdb.Tx) error {
 		err := tx.Ascend("entry", func(key, value string) bool {
 			x := strings.Split(key, ":")
-			k := string(x[1])
+			k := string(x[len(x)-1])
 			hash, err := NewHash(k)
 			if err != nil {
 				return false

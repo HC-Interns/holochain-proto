@@ -260,7 +260,7 @@ func sysValidateEntry(h *Holochain, def *EntryDef, entry Entry, pkg *Package) (e
 		}
 		if def == DelEntryDef {
 			// @TODO refactor and use in other sys types
-			// @see https://github.com/holochain/holochain-proto/issues/733
+			// @see https://github.com/HC-Interns/holochain-proto/issues/733
 			hashValue, ok := input.(map[string]interface{})["Hash"].(string)
 			if !ok {
 				err = ValidationFailed("expected string!")
@@ -274,7 +274,7 @@ func sysValidateEntry(h *Holochain, def *EntryDef, entry Entry, pkg *Package) (e
 		}
 		if def == MigrateEntryDef {
 			// @TODO refactor with above
-			// @see https://github.com/holochain/holochain-proto/issues/733
+			// @see https://github.com/HC-Interns/holochain-proto/issues/733
 			dnaHashValue, ok := input.(map[string]interface{})["DNAHash"].(string)
 			if !ok {
 				err = ValidationFailed("expected string!")

@@ -222,7 +222,7 @@ func Die(message string) {
 
 func GolangHolochainDir(subPath ...string) (path string, err error) {
 	err = nil
-	joinable := append([]string{os.Getenv("GOPATH"), "src/github.com/holochain/holochain-proto"}, subPath...)
+	joinable := append([]string{os.Getenv("GOPATH"), "src/github.com/HC-Interns/holochain-proto"}, subPath...)
 	path = filepath.Join(joinable...)
 	return
 }

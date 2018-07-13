@@ -10,7 +10,7 @@ import (
 
 func TestDelName(t *testing.T) {
 	Convey("delete action should have the right name", t, func() {
-		// https://github.com/holochain/holochain-proto/issues/715
+		// https://github.com/HC-Interns/holochain-proto/issues/715
 		// a := NewDelAction(DelEntry{Hash: ""})
 		a := ActionDel{entry: DelEntry{Hash: ""}}
 		So(a.Name(), ShouldEqual, "del")
@@ -19,7 +19,7 @@ func TestDelName(t *testing.T) {
 
 func TestAPIFnDelName(t *testing.T) {
 	Convey("delete action function should have the right name", t, func() {
-		// https://github.com/holochain/holochain-proto/issues/715
+		// https://github.com/HC-Interns/holochain-proto/issues/715
 		// a := NewDelAction(DelEntry{Hash: ""})
 		a := ActionDel{entry: DelEntry{Hash: ""}}
 		fn := &APIFnDel{action: a}

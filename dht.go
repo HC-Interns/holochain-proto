@@ -12,10 +12,12 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	. "github.com/HC-Interns/holochain-proto/hash"
 	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/tidwall/gjson"
 )
 
 type HashType string
@@ -34,7 +36,7 @@ type DHTConfig struct {
 
 	// ValidationTimeout : (integer) Time period in seconds, until data that needs to be validated against a source remains "alive" to keep trying to get validation from that source. If someone commits something and then goes offline, how long do they have to come back online before DHT sync requests consider that data invalid?
 
-	//PeerTimeout : (integer) Time period in seconds, until a node drops a peer from its neighborhood list for failing to respond to gossip requests.
+	// PeerTimeout : (integer) Time period in seconds, until a node drops a peer from its neighborhood list for failing to respond to gossip requests.
 
 	// WireEncryption : settings for point-to-point encryption of messages on the network (none, AES, what are the options?)
 
@@ -158,16 +160,71 @@ func NewDHT(h *Holochain) *DHT {
 	return &dht
 }
 
+type IndexDef struct {
+	ZomeName  string
+	IndexType string // Buntdb supported index types - int, float, string
+	EntryType string // e.g. person
+	FieldPath string // e.g. 'address.number'
+	Ascending bool
+}
+
+type IndexSpec []IndexDef
+
+func lookupPropertyType(path string, json string) string {
+	// path -> "body.text" -> "properites.body.properties.text"
+	segments := strings.Split(path, ".")
+	key := "properties." + strings.Join(segments, ".properties.")
+	info := gjson.Get(json, key).Map()
+	return info["type"].String()
+}
+
+func getIndexSpec(zomes []Zome) IndexSpec {
+	var spec IndexSpec
+	for _, zome := range zomes {
+		for _, entry := range zome.Entries {
+			spec = append(spec, indexSpecFromSchema(zome.Name, entry.Name, entry.Schema)...)
+		}
+	}
+	return spec
+}
+
+// get a single entries schema index specifications
+func indexSpecFromSchema(zomeName string, entryType string, schema string) IndexSpec {
+	var spec IndexSpec
+	indexFields := gjson.Get(schema, "indexFields").Array()
+	for _, field := range indexFields {
+		def := field.Map()
+		if len(def) != 1 {
+			panic("wtf!!")
+		}
+
+		for path, asc := range def {
+			dataType := lookupPropertyType(path, schema)
+			spec = append(spec, IndexDef{
+				ZomeName:  zomeName,
+				IndexType: dataType, // Buntdb supported index types - int, float, string
+				EntryType: entryType,
+				FieldPath: path,
+				Ascending: asc.Int() != -1,
+			})
+		}
+	}
+	return spec
+}
+
 // Open sets up the DHTs data structures and store
 func (dht *DHT) Open(options interface{}) (err error) {
 	h := options.(*Holochain)
 	dht.h = h
 	dht.glog = &h.Config.Loggers.Gossip
 	dht.dlog = &h.Config.Loggers.DHT
-	dht.config = &h.Nucleus().DNA().DHTConfig
+	dht.config = &h.Nucleus().DNA().DHTConfig // BOOKMARK - use a similar method to get the index spec from app properties. Alternatively can put it in DHTConfig...
+
+	indexSpec := getIndexSpec(h.Nucleus().DNA().Zomes)
 
 	dht.ht = &BuntHT{}
 	dht.ht.Open(filepath.Join(h.DBPath(), DHTStoreFileName))
+	RegisterIndexSpec(dht.ht.(*BuntHT), indexSpec)
 	dht.retryQueue = make(chan *retry, 100)
 	dht.changeQueue = make(Channel, 1000)
 	//go dht.HandleChangeRequests()

@@ -59,7 +59,7 @@ type MigrateEntry struct {
 
 var MigrateEntryDef = &EntryDef{Name: MigrateEntryType, DataFormat: DataFormatJSON, Sharing: Public, Schema: MigrateEntrySchema}
 
-// @see https://github.com/holochain/holochain-proto/issues/731
+// @see https://github.com/HC-Interns/holochain-proto/issues/731
 func (e *MigrateEntry) Def() *EntryDef {
 	return MigrateEntryDef
 }

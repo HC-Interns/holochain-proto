@@ -862,7 +862,45 @@ func NewJSRibosome(h *Holochain, zome *Zome) (n Ribosome, err error) {
 				return
 			},
 		},
+		"queryDHT": fnData{
+			apiFn: &APIFnQueryDHT{},
+			f: func(args []Arg, _f APIFunction, call otto.FunctionCall) (result otto.Value, err error) {
+				f := _f.(*APIFnQueryDHT)
+				f.entryType = args[0].value.(string)
+				options := QueryDHTOptions{
+					Constrain: QueryDHTConstraint{
+						Range: QueryDHTRange{},
+					},
+				}
+				f.options = &options
+				f.zome = zome
 
+				j, err := json.Marshal(args[1].value)
+				if err != nil {
+					return
+				}
+				err = json.Unmarshal(j, &options)
+
+				var r interface{}
+				r, err = f.Call(h)
+
+				var code string
+				switch v := r.(type) {
+				case []string:
+					code = `["` + strings.Join(v, `","`) + `"]`
+				case []QueryDHTResponse:
+					for _, resp := range v {
+						// j, _ := json.Marshal(resp)
+						c := fmt.Sprintf(`{Entry: %v, Hash: "%v"}`, resp.Entry, resp.Hash)
+						code += (c + ",")
+					}
+					code = `[` + code + `]`
+				}
+				arr, _ := jsr.vm.Object(code)
+				result, err = jsr.vm.ToValue(arr)
+				return
+			},
+		},
 		"query": fnData{
 			apiFn: &APIFnQuery{},
 			f: func(args []Arg, _f APIFunction, call otto.FunctionCall) (result otto.Value, err error) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-holochainBinDir="$GOPATH/src/github.com/holochain/holochain-proto/bin"
+holochainBinDir="$GOPATH/src/github.com/HC-Interns/holochain-proto/bin"
 
 #set the HOLOCHAIN_SYSTEM_BIN variable
 . $holochainBinDir/holochain.system.checkInstalled || { echo "HC: cannot find holochain bin directory. exitting" && exit 1 ; }

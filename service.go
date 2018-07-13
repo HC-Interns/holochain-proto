@@ -1667,9 +1667,17 @@ const (
 			"description": "Age in years",
 			"type": "integer",
 			"minimum": 0
+		},
+		"address" : {
+			"type" : "object",
+			"properties" : {
+				"isUnit" : {"type" : "boolean"},
+				"streetName" : {"type" : "string"}
+			}
 		}
 	},
-	"required": ["firstName", "lastName"]
+	"required": ["firstName", "lastName"],
+	"indexFields": [{"firstName" : 1}, {"age" : 1}, {"address.isUnit": -1}]
 }`
 
 	primesSchema = `
@@ -1681,7 +1689,8 @@ const (
 			"type": "integer"
 		}
 	},
-	"required": ["prime"]
+	"required": ["prime"],
+	"indexFields" : [{"prime" : -1}]
 }`
 
 	jsZomeCode = `

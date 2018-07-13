@@ -13,6 +13,7 @@ import (
 	b58 "github.com/jbenet/go-base58"
 	peer "github.com/libp2p/go-libp2p-peer"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tidwall/buntdb"
 )
 
 func TestNewDHT(t *testing.T) {
@@ -780,4 +781,98 @@ func processChangeRequestsInTesting(h *Holochain) {
 			panic(err)
 		}
 	}
+}
+
+func TestIndexSpecFromSchema(t *testing.T) {
+
+	schema := `{
+	"title": "Profile Schema",
+	"type": "object",
+	"name" : "person"
+	"properties": {
+		"firstName": {
+			"type": "string"
+		},
+		"lastName": {
+			"type": "string"
+		},
+		"age": {
+			"description": "Age in years",
+			"type": "integer",
+			"minimum": 0
+		},
+		"address" : {
+			"type" : "object",
+			"properties" : {
+				"street" : {"type" : "string"},
+				"number" : {"type" : "integer"}
+			}
+		}
+	},
+	"required": ["firstName", "lastName"],
+	"indexFields": [{"firstName" : 1}, {"address.number" : -1}]
+}`
+
+	Convey("getIndexSpec can retrieve correct indexing from a schema json", t, func() {
+		zomeName := "someZome"
+		entryType := "person"
+		So(indexSpecFromSchema(zomeName, entryType, schema), ShouldResemble, IndexSpec{
+			IndexDef{
+				ZomeName:  zomeName,
+				EntryType: entryType,
+				IndexType: "string",
+				FieldPath: "firstName",
+				Ascending: true,
+			},
+			IndexDef{
+				ZomeName:  zomeName,
+				EntryType: entryType,
+				IndexType: "integer",
+				FieldPath: "address.number",
+				Ascending: false,
+			},
+		})
+	})
+}
+
+func TestGetIndexSpec(t *testing.T) {
+	d, _, h := PrepareTestChain("test")
+	db := h.dht.ht.(*BuntHT).db
+
+	defer CleanupTestChain(h, d)
+	// z, _ := h.GetZome("zySampleZome")
+
+	Convey("indices were successfully created", t, func() {
+		lst, _ := db.Indexes()
+		So(lst, ShouldContain, "customIndex:jsSampleZome:profile:firstName")
+	})
+
+	Convey("Can call getIndexSpec on test zome", t, func() {
+		So(getIndexSpec(h.Nucleus().DNA().Zomes), ShouldContain,
+			IndexDef{
+				ZomeName:  "zySampleZome",
+				EntryType: "primes",
+				IndexType: "integer",
+				FieldPath: "prime",
+				Ascending: false,
+			},
+		)
+	})
+
+	Convey("Can query an added entry using the created index", t, func(c C) {
+		// primesEntry := `{"prime":7}`
+		profileEntry := `{"firstName":"Willem", "lastName":"Dafoe"}`
+
+		hash := commit(h, "profile", profileEntry)
+		fmt.Println(hash)
+
+		db.View(func(tx *buntdb.Tx) error {
+			tx.AscendEqual("customIndex:jsSampleZome:profile:firstName", `{"firstName":"Willem"}`, func(key, val string) bool {
+				fmt.Println(val)
+				So(val, ShouldContainSubstring, profileEntry)
+				return true
+			})
+			return nil
+		})
+	})
 }

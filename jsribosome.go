@@ -156,13 +156,16 @@ func prepareJSEntryArgs(def *EntryDef, entry Entry, header *Header) (args string
 	var hdr string
 	if header != nil {
 		hdr = fmt.Sprintf(
-			`{"EntryLink":"%s","Type":"%s","Time":"%s"}`,
+			`{"EntryLink":"%s","Type":"%s","Time":"%s","NextHeader":"%s","Next":"%s","Sig":"%v"}`,
 			header.EntryLink.String(),
 			header.Type,
 			header.Time.UTC().Format(time.RFC3339),
+			header.HeaderLink.String(),
+			header.TypeLink.String(),
+			header.Sig,
 		)
 	} else {
-		hdr = `{"EntryLink":"","Type":"","Time":""}`
+		hdr = `{"EntryLink":"","Type":"","Time":"","NextHeader":"","Next":"","Sig":""}`
 	}
 	args += "," + hdr
 	return

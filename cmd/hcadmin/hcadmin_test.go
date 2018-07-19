@@ -7,6 +7,9 @@ import (
 	"regexp"
 	"testing"
 	"time"
+	"io/ioutil"
+	"os/exec"
+	"os/user"
 
 	holo "github.com/HC-Interns/holochain-proto"
 	"github.com/HC-Interns/holochain-proto/cmd"
@@ -287,6 +290,46 @@ func TestDumpChainAsJSON(t *testing.T) {
 			So(out, ShouldContainSubstring, "\"dht_entries\": [")
 		})
 	})
+}
+
+func TestRestore(t *testing.T) {
+
+	d := holo.SetupTestDir()
+	defer os.RemoveAll(d)
+	app := setupApp()
+	os.Args = []string{"hcadmin", "-path", d, "init", "test-identity"}
+	err := app.Run(os.Args)
+	if err != nil {
+		panic(err)
+	}
+	hcdev := filepath.Join(os.Getenv("GOPATH"), "/bin/hcdev")
+	err = cmd.OsExecSilent(hcdev, "-path", d, "init", "-test", "testAppSrc")
+	if err != nil {
+		panic(err)
+	}
+	app = setupApp()
+	
+	Convey("Calling hcadmin restore with insufficient params gives error", t, func() {
+		_, err := runAppWithStdoutCapture(app, []string{"hcadmin", "restore"})
+
+		So(err.Error(), ShouldContainSubstring, "missing required backup-app-name argument")
+	})
+
+	Convey("Calling hcadmin restore with a single parameter that is an invalid backup app name fails", t, func() {
+		_, err := runAppWithStdoutCapture(app, []string{"hcadmin", "restore", "backup"})
+
+		So(err.Error(), ShouldContainSubstring, "restore: No backup app exists with name")
+	})
+
+	
+
+	Convey("Calling hcadmin restore with a single parameter that is an installed backup app prints all backed up apps", t, func() {
+		out, err := runAppWithStdoutCapture(app, []string{"hcadmin", "restore", "backup"})
+
+		So(err, ShouldBeNil)
+		So(out, ShouldContainSubstring, "[")
+	})
+
 }
 
 func runAppWithStdoutCapture(app *cli.App, args []string) (out string, err error) {

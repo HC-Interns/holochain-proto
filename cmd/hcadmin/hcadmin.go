@@ -50,7 +50,7 @@ func setupApp() (app *cli.App) {
 		},
 	}
 
-	app.Commands = []cli.Command{
+	app.Commands = []cli.Command {
 		{
 			Name:      "init",
 			Aliases:   []string{"i"},
@@ -214,6 +214,23 @@ func setupApp() (app *cli.App) {
 			},
 		},
 		{
+			Name:      "restore",
+			Aliases:   []string{"r"},
+			ArgsUsage: "backup-app-name path-to-new-app-dna new-app-name ",
+			Usage:     "joins a holochain by recovering a local chain fron a locally installed backup app",
+			Action: func(c *cli.Context) error {
+				if len(c.Args()) < 1 {
+					return errors.New("restore: missing required backup-app-name argument")
+				} else if len(c.Args()) == 1 {
+					// only a backup app was provided. List the backed up apps
+					backupAppName := c.Args().First()
+					return listBackups(service, backupAppName)
+				} else {
+					return errors.New("restore: not implemented")
+				}
+			},
+		},
+		{
 			Name:      "bridge",
 			Aliases:   []string{"b"},
 			ArgsUsage: "caller-chain callee-chain bridge-zome",
@@ -352,5 +369,45 @@ func genChain(service *holo.Service, name string) error {
 	if verbose {
 		fmt.Printf("Genesis entries added and DNA hashed for new holochain with ID: %s\n", h.DNAHash().String())
 	}
+	return nil
+}
+
+// func genChainWithRestore(service *holo.Service, name string, backupAppName string) error {
+// 	hBackup, err := cmd.GetHolochain(backupAppName, service, "get-backup")
+
+// 	if err != nil {
+// 		return fmt.Errorf("restore: No backup app exists with name: %s", backupAppName)
+// 	}
+
+// 	h, err := service.GenChain(name)
+
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if verbose {
+// 		fmt.Printf("Genesis entries added and DNA hashed for new holochain with ID: %s\n", h.DNAHash().String())
+// 	}
+
+// 	// get a list of all available backups to restore from
+// 	r, z, err := hBackup.MakeRibosome("backupChain")
+// 	fn, err := z.GetFunctionDef("getBackups")
+// 	availableBackups, err := r.Call(fn, nil)
+// 	fmt.Println(availableBackups)
+
+// 	return nil
+// }
+
+func listBackups(service *holo.Service, backupAppName string) error {
+	hBackup, err := cmd.GetHolochain(backupAppName, service, "get-backup")
+
+	if err != nil {
+		return fmt.Errorf("restore: No backup app exists with name: %s", backupAppName)
+	}
+
+	// get a list of all available backups to restore from
+	r, z, err := hBackup.MakeRibosome("backupChain")
+	fn, err := z.GetFunctionDef("getBackups")
+	availableBackups, err := r.Call(fn, nil)
+	fmt.Println(availableBackups)
 	return nil
 }

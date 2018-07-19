@@ -484,8 +484,9 @@ func TestJSQuery(t *testing.T) {
 			So(err, ShouldBeNil)
 		}, `[{"Identity":"Herbert \u003ch@bert.com\u003e","PublicKey":"4XTTM8sJEQD5zMLT1gtu2ogshwg5AdUPNhJRbLvs77gsVtQQi","Revocation":""}]`)
 
-		_, err := z.Run(`debug(query({Constrain:{EntryTypes:["%dna"]}}))`)
-		So(err.Error(), ShouldEqual, `{"errorMessage":"data format not implemented: _DNA","function":"query","name":"HolochainError","source":{}}`)
+		// querying DNA has been disabled
+		// _, err := z.Run(`debug(query({Constrain:{EntryTypes:["%dna"]}}))`)
+		// So(err.Error(), ShouldEqual, `{"errorMessage":"data format not implemented: _DNA","function":"query","name":"HolochainError","source":{}}`)
 
 		ShouldLog(h.nucleus.alog, func() {
 			_, err := z.Run(`debug(query({Constrain:{EntryTypes:["rating"]}}))`)

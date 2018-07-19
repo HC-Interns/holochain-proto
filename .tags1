@@ -1,0 +1,33 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	0	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+TestNewJSRibosome	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestNewJSRibosome(t *testing.T) {$/;"	func	line:16
+token	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^			var token string$/;"	var	line:254
+pubKeyBytes	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^			var pubKeyBytes []byte$/;"	var	line:305
+hashStr	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^			var hashStr string$/;"	var	line:341
+TestJSQuery	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSQuery(t *testing.T) {$/;"	func	line:439
+TestJSQueryDHT	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSQueryDHT(t *testing.T) {$/;"	func	line:497
+TestJSGenesis	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSGenesis(t *testing.T) {$/;"	func	line:628
+TestJSBridgeGenesis	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSBridgeGenesis(t *testing.T) {$/;"	func	line:643
+TestJSReceive	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSReceive(t *testing.T) {$/;"	func	line:666
+TestJSBundleCanceled	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSBundleCanceled(t *testing.T) {$/;"	func	line:676
+TestJSbuildValidate	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSbuildValidate(t *testing.T) {$/;"	func	line:692
+header	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^	var header Header$/;"	var	line:698
+TestJSValidateCommit	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSValidateCommit(t *testing.T) {$/;"	func	line:720
+TestPrepareJSValidateArgs	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestPrepareJSValidateArgs(t *testing.T) {$/;"	func	line:793
+header	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^		var header Header$/;"	var	line:799
+header	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^		var header Header$/;"	var	line:807
+header	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^		var header = Header{Type: "foo"}$/;"	var	line:816
+TestJSSanitize	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSSanitize(t *testing.T) {$/;"	func	line:843
+TestJSExposeCall	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSExposeCall(t *testing.T) {$/;"	func	line:851
+TestJSDHT	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSDHT(t *testing.T) {$/;"	func	line:896
+entries	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^	Convey("get should parsed JSON object of JSON type entries", t, func() {$/;"	type	line:966
+found	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^		var found bool$/;"	var	line:1204
+TestJSProcessArgs	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^func TestJSProcessArgs(t *testing.T) {$/;"	func	line:1240
+entries	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^	Convey("EntryArg should only accept strings for string type entries", t, func() {$/;"	type	line:1293
+entries	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^	Convey("EntryArg should only accept objects for links type entries", t, func() {$/;"	type	line:1318
+entries	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^	Convey("EntryArg should convert all values to JSON for JSON type entries", t, func() {$/;"	type	line:1343
+to	/Users/willemolding/go/src/github.com/HC-Interns/holochain-proto/jsribosome_test.go	/^	Convey("it should convert ToStrArg any type to a string", t, func() {$/;"	type	line:1402

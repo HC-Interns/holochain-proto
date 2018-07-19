@@ -1022,6 +1022,9 @@ func (h *Holochain) Query(options *QueryOptions) (results []QueryResult, err err
 				}
 			}
 		}
+		if header.Type == DNAEntryType { // query should never try to return a dna entry
+			skip = true
+		}
 		if !skip && (options.Constrain.Equals != "" || options.Constrain.Contains != "" || options.Constrain.Matches != "") {
 			var content string
 			var contentMap map[string]interface{}

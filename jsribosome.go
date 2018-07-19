@@ -10,8 +10,8 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/HC-Interns/holochain-proto/hash"
-	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/robertkrimen/otto"
+	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 	"strings"
 	"time"
 )
@@ -155,15 +155,7 @@ func prepareJSEntryArgs(def *EntryDef, entry Entry, header *Header) (args string
 	}
 	var hdr string
 	if header != nil {
-		hdr = fmt.Sprintf(
-			`{"EntryLink":"%s","Type":"%s","Time":"%s","NextHeader":"%s","Next":"%s","Sig":"%v"}`,
-			header.EntryLink.String(),
-			header.Type,
-			header.Time.UTC().Format(time.RFC3339),
-			header.HeaderLink.String(),
-			header.TypeLink.String(),
-			header.Sig,
-		)
+		hdr, err = header.ToJSON()
 	} else {
 		hdr = `{"EntryLink":"","Type":"","Time":"","NextHeader":"","Next":"","Sig":""}`
 	}
